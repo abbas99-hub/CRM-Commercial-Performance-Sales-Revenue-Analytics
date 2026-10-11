@@ -9,13 +9,12 @@
 
 This project demonstrates how a commercial analyst can turn Dynamics 365-style CRM data into a management decision system in Power BI.
 
-The solution answers five executive questions:
+The solution answers the executive questions as follows:
 
 1. **How much business is already won?**
 2. **How much pipeline is available, and how much is realistically forecastable?**
 3. **Where is pipeline risk concentrated?**
 4. **Which sales teams, customers and segments require intervention?**
-5. **Can management trust the CRM data behind the numbers?**
 
 ## 2. Business problem
 
@@ -104,7 +103,7 @@ Microsoft documents Dataverse as the data platform behind Dynamics 365 Sales and
 
 ```mermaid
 erDiagram
-    ACCOUNTS ||--o{ OPPORTUNITIES : owns
+    ACCOUNTS ||--o{ OPPORTUNITIES :
     ACCOUNTS ||--o{ CONTACTS : has
     ACCOUNTS ||--o{ LEADS : generates
     ACCOUNTS ||--o{ ACTIVITIES : receives
@@ -155,16 +154,15 @@ This is deliberate. A commercial analytics solution should demonstrate that the 
 1. Open Power BI Desktop.
 2. Get Data → Text/CSV.
 3. Load the CSVs under `data/raw/`.
-4. Set correct data types.
+4. Set the correct data types.
 5. Create the relationships documented in `powerbi/Semantic_Model.md`.
 6. Mark `Date` as the date table.
 7. Add the measures from `powerbi/DAX_Measures.dax`.
 8. Apply `powerbi/CRM_Commercial_Analytics_Theme.json`.
-9. Build the five report pages.
-10. Add drill-through from rep/account/opportunity views.
-11. Add conditional formatting for at-risk pipeline and data-quality exceptions.
-12. Publish the report to Power BI Service.
-13. Configure workspace permissions and refresh.
+9. Build the report pages.
+10. Add conditional formatting for at-risk pipeline and data-quality exceptions.
+11. Publish the report to Power BI Service.
+12. Configure workspace permissions and refresh.
 
 Microsoft's current guidance supports connecting Power BI Desktop directly to Dataverse, transforming tables, and publishing reports to Power BI. citeturn0search0turn0search2
 
@@ -180,16 +178,13 @@ Microsoft also documents Power BI visualization embedding within model-driven Po
 
 ## 12. Expected business impact
 
-Because this is a synthetic portfolio project, the following are **targeted business outcomes, not claimed real client results**:
-
 - Reduce manual weekly pipeline reporting effort.
 - Establish a single definition for commercial KPIs.
 - Improve forecast discipline using weighted pipeline.
-- Prioritize stale, high-value and low-probability opportunities.
+- Prioritize stale, high-value, and low-probability opportunities.
 - Give managers rep-level target and execution visibility.
 - Create a repeatable CRM data-quality control layer.
 - Move sales reviews from record collection to exception-based management.
-
 
 ## 14. Repository structure
 

@@ -4,9 +4,6 @@
 
 ![Power BI](https://img.shields.io/badge/Power%20BI-Commercial%20Analytics-yellow)
 ![Dynamics 365](https://img.shields.io/badge/Dynamics%20365-CRM-blue)
-![Dataverse](https://img.shields.io/badge/Dataverse-Source-742774)
-![Python](https://img.shields.io/badge/Python-Synthetic%20Data-3776AB)
-![Status](https://img.shields.io/badge/Status-Portfolio%20Project-green)
 
 ## 1. Executive summary
 

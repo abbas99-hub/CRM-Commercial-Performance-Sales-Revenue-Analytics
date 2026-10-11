@@ -103,7 +103,7 @@ Microsoft documents Dataverse as the data platform behind Dynamics 365 Sales and
 
 ```mermaid
 erDiagram
-    ACCOUNTS ||--o{ OPPORTUNITIES :
+    ACCOUNTS ||--o{ OPPORTUNITIES : owns
     ACCOUNTS ||--o{ CONTACTS : has
     ACCOUNTS ||--o{ LEADS : generates
     ACCOUNTS ||--o{ ACTIVITIES : receives

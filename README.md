@@ -140,9 +140,9 @@ Use dimensions for reusable business context and facts for events/measures. The 
 | Targets | 1,650 | Fact |
 | Date | 1,096 | Dimension |
 
-## 9. Intentional data-quality issues
+## 9. Data-quality issues
 
-The project deliberately contains:
+The project contains:
 
 - 35 duplicate opportunity IDs
 - 120 opportunities with missing sales reps
@@ -150,7 +150,7 @@ The project deliberately contains:
 - 25 opportunities with an invalid stage value
 - 40 opportunities with zero estimated revenue
 
-This is deliberate. A commercial analytics solution should demonstrate that the analyst understands **data trust**, not only visualization.
+A commercial analytics solution should demonstrate that the analyst understands **data trust**, not only visualization.
 
 ## 10. Power BI build steps
 
@@ -169,11 +169,7 @@ This is deliberate. A commercial analytics solution should demonstrate that the 
 
 Microsoft's current guidance supports connecting Power BI Desktop directly to Dataverse, transforming tables, and publishing reports to Power BI. citeturn0search0turn0search2
 
-## 11. Production Dynamics 365 implementation
-
-For a real implementation, replace the CSV layer with Dataverse/Dynamics 365 Sales tables such as Accounts, Contacts, Leads, Opportunities and Products. Dynamics 365 Sales runs on Dataverse and exposes Sales tables through the platform. citeturn0search5turn0search12
-
-Typical production flow:
+## 11. Typical Production flow:
 
 **Dynamics 365 Sales → Dataverse → Power BI semantic model → Power BI Service → embedded/shared report**
 

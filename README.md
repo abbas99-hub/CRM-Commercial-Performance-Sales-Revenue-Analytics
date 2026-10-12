@@ -2,7 +2,7 @@
 
 > **From CRM records to commercial decisions: pipeline, forecast, sales productivity, and data quality in one operating view.**
 
-![Power BI](https://img.shields.io/badge/Power%20BI-Commercial%20Analytics-yellow)
+![Power BI](https://img.shields.io/badge/Power%20BI-Commercial%20Analytics-yellow)(https://github.com/abbas99-hub/CRM-Commercial-Performance-Sales-Revenue-Analytics/blob/main/images/dashboard.png)
 ![Dynamics 365](https://img.shields.io/badge/Dynamics%20365-CRM-blue)
 
 <img width="1537" height="1023" alt="CRM and Data Analytics Infographic" src="https://github.com/user-attachments/assets/7ea4803a-8943-4bdc-b0d0-ab815cc58d8b" />

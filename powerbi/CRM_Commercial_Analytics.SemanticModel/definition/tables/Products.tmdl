@@ -1,0 +1,83 @@
+/// DIMENSION | One row per product (100).
+table Products
+	lineageTag: 75df3f82-f92b-48a0-a6d2-8458cc6e6150
+
+	column ProductID
+		dataType: string
+		lineageTag: 36015de3-e8d9-4178-81aa-3ab9f255dad6
+		summarizeBy: none
+		sourceColumn: ProductID
+
+		annotation SummarizationSetBy = Automatic
+
+	column ProductName
+		dataType: string
+		lineageTag: fdc55361-775c-43ce-8983-98a2c426b092
+		summarizeBy: none
+		sourceColumn: ProductName
+
+		annotation SummarizationSetBy = Automatic
+
+	column Category
+		dataType: string
+		lineageTag: e9198687-97c6-46c3-a120-53d0d0c83a39
+		summarizeBy: none
+		sourceColumn: Category
+
+		annotation SummarizationSetBy = Automatic
+
+	column UnitPrice
+		dataType: int64
+		formatString: "AED "#,0
+		lineageTag: c94b2229-f494-40a4-a303-991ece2927dc
+		summarizeBy: none
+		sourceColumn: UnitPrice
+
+		annotation SummarizationSetBy = Automatic
+
+	column StandardMarginPct
+		dataType: double
+		formatString: 0.0%
+		lineageTag: 1bd39355-c0a4-45be-b82c-cb6251df9a17
+		summarizeBy: none
+		sourceColumn: StandardMarginPct
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column Active
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 77e251e8-bebb-4cfc-a9ee-c1d6e117d5ca
+		summarizeBy: none
+		sourceColumn: Active
+
+		annotation SummarizationSetBy = Automatic
+
+	hierarchy 'Product Hierarchy'
+		lineageTag: 06fd316e-8fb7-4643-a5c5-e76701398cb1
+
+		level Category
+			lineageTag: f3c2c37f-ee0c-4c4a-984c-39e8e1aa8682
+			column: Category
+
+		level Product
+			lineageTag: b38c1877-2cc0-4d8f-b447-c32828528d2b
+			column: ProductName
+
+	partition Products = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents(SourceFolder & "Products.csv"),[Delimiter=",", Columns=6, Encoding=1252, QuoteStyle=QuoteStyle.None]),
+				    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+				    Typed = Table.TransformColumnTypes(Promoted,{{"ProductID", type text}, {"ProductName", type text}, {"Category", type text}, {"UnitPrice", Int64.Type}, {"StandardMarginPct", type number}, {"Active", type logical}}),
+				    Cleaned = fnCleanText(Typed, {"ProductID","ProductName","Category"}, {"ProductID"})
+				in
+				    Cleaned
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

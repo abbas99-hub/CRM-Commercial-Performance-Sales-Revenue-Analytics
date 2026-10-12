@@ -1,0 +1,72 @@
+/// FACT | Grain: one row per sales rep per month (1,650). Month is first-of-month and joins to Date[Date].
+table Targets
+	lineageTag: 53b5ffce-b50e-4f78-bbf1-74bf43824d09
+
+	column Month
+		dataType: dateTime
+		formatString: mmm yyyy
+		lineageTag: db9c3950-df6a-4ddb-b966-04f8b97e8556
+		summarizeBy: none
+		sourceColumn: Month
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column SalesRepID
+		dataType: string
+		isHidden
+		lineageTag: a518d02c-51ee-4ed2-beb6-805b32b00f11
+		summarizeBy: none
+		sourceColumn: SalesRepID
+
+		annotation SummarizationSetBy = Automatic
+
+	column RevenueTarget
+		dataType: double
+		formatString: "AED "#,0
+		lineageTag: a3ceb09f-7ab7-43ae-bc5f-1bf42cc42f53
+		summarizeBy: sum
+		sourceColumn: RevenueTarget
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column PipelineTarget
+		dataType: double
+		formatString: "AED "#,0
+		lineageTag: 88f91940-49d2-4245-ac2e-1ab0f99c8a0b
+		summarizeBy: sum
+		sourceColumn: PipelineTarget
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column WinRateTargetPct
+		dataType: double
+		formatString: 0%
+		lineageTag: 5172efd1-f73e-4c6b-918f-32bed78cc771
+		summarizeBy: none
+		sourceColumn: WinRateTargetPct
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	partition Targets = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents(SourceFolder & "Targets.csv"),[Delimiter=",", Columns=5, Encoding=1252, QuoteStyle=QuoteStyle.None]),
+				    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+				    Typed = Table.TransformColumnTypes(Promoted,{{"Month", type date}, {"SalesRepID", type text}, {"RevenueTarget", type number}, {"PipelineTarget", type number}, {"WinRateTargetPct", type number}}),
+				    Cleaned = fnCleanText(Typed, {"SalesRepID"}, {"SalesRepID"})
+				in
+				    Cleaned
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

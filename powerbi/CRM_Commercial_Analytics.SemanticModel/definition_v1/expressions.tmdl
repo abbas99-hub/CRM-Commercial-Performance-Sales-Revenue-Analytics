@@ -1,0 +1,17 @@
+/// Folder containing the Dynamics 365 CSV exports. Change this one value to repoint all queries.
+expression SourceFolder = "C:\Users\Hp\OneDrive\Documents\Power BI Projects\CRM_Commercial_Analytics\Data\" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
+	lineageTag: 4537a9dc-e235-4ca3-8c9a-ebc05d9b3032
+
+/// Trims, removes non-printing characters, converts empty strings to null, and optionally upper-cases ID columns.
+expression fnCleanText =
+		(tbl as table, textCols as list, upperCols as list) as table =>
+		let
+		    CleanOne = (v as nullable text) as nullable text =>
+		        if v = null then null
+		        else let t = Text.Trim(Text.Clean(v)) in if t = "" then null else t,
+		    Trimmed = Table.TransformColumns(tbl, List.Transform(textCols, (c) => {c, CleanOne, type nullable text})),
+		    Upper = Table.TransformColumns(Trimmed, List.Transform(upperCols, (c) => {c, (v) => if v = null then null else Text.Upper(v), type nullable text}))
+		in
+		    Upper
+	lineageTag: e8fff72c-10dc-411f-87d5-01e4b2e1be2c
+

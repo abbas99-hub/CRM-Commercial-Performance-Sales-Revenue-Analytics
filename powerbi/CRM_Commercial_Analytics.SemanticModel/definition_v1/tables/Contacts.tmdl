@@ -1,0 +1,61 @@
+/// DIMENSION (child of Accounts) | One row per contact (1,500).
+table Contacts
+	lineageTag: f208df88-951d-4434-83a8-6822292dd216
+
+	column ContactID
+		dataType: string
+		lineageTag: 5950b47b-6d51-4a92-a13b-aea025957305
+		summarizeBy: none
+		sourceColumn: ContactID
+
+		annotation SummarizationSetBy = Automatic
+
+	column AccountID
+		dataType: string
+		isHidden
+		lineageTag: 68ed7112-7968-4ff3-a8ac-25943475bdf8
+		summarizeBy: none
+		sourceColumn: AccountID
+
+		annotation SummarizationSetBy = Automatic
+
+	column ContactName
+		dataType: string
+		lineageTag: f7caf0f4-be69-496c-b9d6-6a81dc089619
+		summarizeBy: none
+		sourceColumn: ContactName
+
+		annotation SummarizationSetBy = Automatic
+
+	column JobTitle
+		dataType: string
+		lineageTag: 2abfeb65-0db4-43c2-80a7-c2d920e2b34a
+		summarizeBy: none
+		sourceColumn: JobTitle
+
+		annotation SummarizationSetBy = Automatic
+
+	column EmailOptIn
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 5cbf44be-b050-47c5-b9ac-7966cbb0790e
+		summarizeBy: none
+		sourceColumn: EmailOptIn
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Contacts = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents(SourceFolder & "Contacts.csv"),[Delimiter=",", Columns=5, Encoding=1252, QuoteStyle=QuoteStyle.None]),
+				    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+				    Typed = Table.TransformColumnTypes(Promoted,{{"ContactID", type text}, {"AccountID", type text}, {"ContactName", type text}, {"JobTitle", type text}, {"EmailOptIn", type logical}}),
+				    Cleaned = fnCleanText(Typed, {"ContactID","AccountID","ContactName","JobTitle"}, {"ContactID","AccountID"})
+				in
+				    Cleaned
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

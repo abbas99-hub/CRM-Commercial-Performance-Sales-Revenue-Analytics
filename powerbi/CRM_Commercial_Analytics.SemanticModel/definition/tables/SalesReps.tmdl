@@ -1,0 +1,83 @@
+/// DIMENSION | One row per sales rep (50). Hierarchy: Region > Manager > Sales Rep.
+table SalesReps
+	lineageTag: 46e76556-cc50-41b8-90ab-04483f3559ee
+
+	column SalesRepID
+		dataType: string
+		lineageTag: aa600973-ea8f-4b88-b867-382009c00075
+		summarizeBy: none
+		sourceColumn: SalesRepID
+
+		annotation SummarizationSetBy = Automatic
+
+	column SalesRepName
+		dataType: string
+		lineageTag: ea7397e8-9fc3-4844-9da9-84fb7210bc65
+		summarizeBy: none
+		sourceColumn: SalesRepName
+
+		annotation SummarizationSetBy = Automatic
+
+	column ManagerName
+		dataType: string
+		lineageTag: 3980b306-2998-4952-885e-b541a9103e26
+		summarizeBy: none
+		sourceColumn: ManagerName
+
+		annotation SummarizationSetBy = Automatic
+
+	column TerritoryID
+		dataType: string
+		lineageTag: 63d7d925-5b08-4622-9497-87df95e282d5
+		summarizeBy: none
+		sourceColumn: TerritoryID
+
+		annotation SummarizationSetBy = Automatic
+
+	column Region
+		dataType: string
+		lineageTag: 2598fc8f-407f-411c-b5a6-3713d9e7ac55
+		summarizeBy: none
+		sourceColumn: Region
+
+		annotation SummarizationSetBy = Automatic
+
+	column TargetAnnual
+		dataType: int64
+		formatString: "AED "#,0
+		lineageTag: ab7291b4-9c61-4c4e-ab54-f29d5446ce6d
+		summarizeBy: none
+		sourceColumn: TargetAnnual
+
+		annotation SummarizationSetBy = Automatic
+
+	hierarchy 'Sales Org'
+		lineageTag: 450f5835-fd8f-45bd-9745-ec48e3fb89fd
+
+		level Region
+			lineageTag: 78e0987b-ae0f-40c1-a7ca-b8e00661524e
+			column: Region
+
+		level Manager
+			lineageTag: 837106f1-f2a8-4908-b3cf-b7abf7074ac8
+			column: ManagerName
+
+		level 'Sales Rep'
+			lineageTag: 882626b2-12f2-46e2-90c6-59db350f3fe6
+			column: SalesRepName
+
+	partition SalesReps = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents(SourceFolder & "SalesReps.csv"),[Delimiter=",", Columns=6, Encoding=1252, QuoteStyle=QuoteStyle.None]),
+				    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+				    Typed = Table.TransformColumnTypes(Promoted,{{"SalesRepID", type text}, {"SalesRepName", type text}, {"ManagerName", type text}, {"TerritoryID", type text}, {"Region", type text}, {"TargetAnnual", Int64.Type}}),
+				    Cleaned = fnCleanText(Typed, {"SalesRepID","SalesRepName","ManagerName","TerritoryID","Region"}, {"SalesRepID","TerritoryID"})
+				in
+				    Cleaned
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

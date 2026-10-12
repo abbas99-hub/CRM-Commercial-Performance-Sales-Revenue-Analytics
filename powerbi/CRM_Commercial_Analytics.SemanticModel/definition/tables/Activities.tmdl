@@ -1,0 +1,90 @@
+/// FACT | Grain: one row per sales activity (40,000). Linked to Accounts/SalesReps/Date by the activity's own values. Link to Opportunities is INACTIVE (use USERELATIONSHIP): the activity's account and rep differ from the opportunity's in 99.9% of rows (39,978 of 40,000), so the two links carry different meanings.
+table Activities
+	lineageTag: 20abda50-17b2-4a4d-8ae7-1163a2bb83c2
+
+	column ActivityID
+		dataType: string
+		lineageTag: c4ee4512-e250-406b-bd1b-1ca42d45be23
+		summarizeBy: none
+		sourceColumn: ActivityID
+
+		annotation SummarizationSetBy = Automatic
+
+	column OpportunityID
+		dataType: string
+		isHidden
+		lineageTag: 6a1ceca3-14ee-4d9d-9616-c8a9693e2951
+		summarizeBy: none
+		sourceColumn: OpportunityID
+
+		annotation SummarizationSetBy = Automatic
+
+	column AccountID
+		dataType: string
+		isHidden
+		lineageTag: d7b49325-a7ea-4b0d-bcd3-da55d4f47f0a
+		summarizeBy: none
+		sourceColumn: AccountID
+
+		annotation SummarizationSetBy = Automatic
+
+	column SalesRepID
+		dataType: string
+		isHidden
+		lineageTag: 74f4f1d1-d788-4eac-80dc-60354f3bf937
+		summarizeBy: none
+		sourceColumn: SalesRepID
+
+		annotation SummarizationSetBy = Automatic
+
+	column ActivityDate
+		dataType: dateTime
+		formatString: dd mmm yyyy
+		lineageTag: 07a4d068-e4e9-4b1b-8757-5b6d6cd9bded
+		summarizeBy: none
+		sourceColumn: ActivityDate
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column ActivityType
+		dataType: string
+		lineageTag: 71425faf-403e-4f19-94ae-4016c6a6bf77
+		summarizeBy: none
+		sourceColumn: ActivityType
+
+		annotation SummarizationSetBy = Automatic
+
+	column Outcome
+		dataType: string
+		lineageTag: 8857b565-867e-4854-bdf4-08b91a094314
+		summarizeBy: none
+		sourceColumn: Outcome
+
+		annotation SummarizationSetBy = Automatic
+
+	column DurationMinutes
+		dataType: int64
+		formatString: 0
+		lineageTag: 0abd8f18-80a4-49ba-ae27-c9f749b4dd11
+		summarizeBy: sum
+		sourceColumn: DurationMinutes
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Activities = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents(SourceFolder & "Activities.csv"),[Delimiter=",", Columns=8, Encoding=1252, QuoteStyle=QuoteStyle.None]),
+				    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+				    Typed = Table.TransformColumnTypes(Promoted,{{"ActivityID", type text}, {"OpportunityID", type text}, {"AccountID", type text}, {"SalesRepID", type text}, {"ActivityDate", type date}, {"ActivityType", type text}, {"Outcome", type text}, {"DurationMinutes", Int64.Type}}),
+				    Cleaned = fnCleanText(Typed, {"ActivityID","OpportunityID","AccountID","SalesRepID","ActivityType","Outcome"}, {"ActivityID","OpportunityID","AccountID","SalesRepID"})
+				in
+				    Cleaned
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

@@ -1,0 +1,32 @@
+model Model
+	culture: en-US
+	defaultPowerBIDataSourceVersion: powerBI_V3
+	sourceQueryCulture: en-US
+	dataAccessOptions
+		legacyRedirects
+		returnErrorValuesAsNull
+
+annotation __PBI_TimeIntelligenceEnabled = 0
+
+annotation PBI_QueryOrder = ["Accounts","Activities","Campaigns","Contacts","Date","Leads","Opportunities","OpportunityProducts","Products","SalesReps","Targets"]
+
+annotation PBI_ProTooling = ["MCP-PBIModeling","DevMode"]
+
+ref table Activities
+ref table Campaigns
+ref table Contacts
+ref table Date
+ref table Leads
+ref table OpportunityProducts
+ref table Products
+ref table SalesReps
+ref table Targets
+ref table Accounts
+ref table Opportunities
+ref table _Measures
+ref table 'Stale Threshold'
+ref table 'DQ Checks'
+ref table Insights
+
+ref cultureInfo en-US
+

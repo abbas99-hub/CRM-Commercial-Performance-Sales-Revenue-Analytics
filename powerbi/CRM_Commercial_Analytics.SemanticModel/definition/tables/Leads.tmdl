@@ -1,0 +1,100 @@
+/// FACT | Grain: one row per lead (5,000). Active date = CreatedDate; ConvertedDate relationship is inactive.
+table Leads
+	lineageTag: ec9596f3-ec8b-4de2-96e3-fd4f3b0e17ff
+
+	column LeadID
+		dataType: string
+		lineageTag: 1c53e02b-0c6c-43e1-b9cb-891f6228d394
+		summarizeBy: none
+		sourceColumn: LeadID
+
+		annotation SummarizationSetBy = Automatic
+
+	column CreatedDate
+		dataType: dateTime
+		formatString: dd mmm yyyy
+		lineageTag: 51d43fcb-557a-4261-a0fd-7c20ba49eaf9
+		summarizeBy: none
+		sourceColumn: CreatedDate
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column AccountID
+		dataType: string
+		isHidden
+		lineageTag: 249a6f47-171e-4c36-b69d-92f74bc7a90d
+		summarizeBy: none
+		sourceColumn: AccountID
+
+		annotation SummarizationSetBy = Automatic
+
+	column LeadSource
+		dataType: string
+		lineageTag: 7017bb56-3a46-4c34-ba62-6ae7c1344e1f
+		summarizeBy: none
+		sourceColumn: LeadSource
+
+		annotation SummarizationSetBy = Automatic
+
+	column Industry
+		dataType: string
+		lineageTag: 0e9ca85d-93d3-4a08-937b-1e817dbc008a
+		summarizeBy: none
+		sourceColumn: Industry
+
+		annotation SummarizationSetBy = Automatic
+
+	column LeadScore
+		dataType: int64
+		formatString: 0
+		lineageTag: 66fe536d-ec99-4de6-bf57-eca55b1ff3b4
+		summarizeBy: none
+		sourceColumn: LeadScore
+
+		annotation SummarizationSetBy = Automatic
+
+	column Status
+		dataType: string
+		lineageTag: 43dc80a6-aeae-4bd3-9483-69147e269c82
+		summarizeBy: none
+		sourceColumn: Status
+
+		annotation SummarizationSetBy = Automatic
+
+	column ConvertedDate
+		dataType: dateTime
+		formatString: dd mmm yyyy
+		lineageTag: f4865449-c8bd-4d8a-a897-14b5d964d6b5
+		summarizeBy: none
+		sourceColumn: ConvertedDate
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column SalesRepID
+		dataType: string
+		isHidden
+		lineageTag: 46d4a1bc-06a8-4948-8802-cb3f510e4f8a
+		summarizeBy: none
+		sourceColumn: SalesRepID
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Leads = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents(SourceFolder & "Leads.csv"),[Delimiter=",", Columns=9, Encoding=1252, QuoteStyle=QuoteStyle.None]),
+				    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+				    Typed = Table.TransformColumnTypes(Promoted,{{"LeadID", type text}, {"CreatedDate", type date}, {"AccountID", type text}, {"LeadSource", type text}, {"Industry", type text}, {"LeadScore", Int64.Type}, {"Status", type text}, {"ConvertedDate", type date}, {"SalesRepID", type text}}),
+				    Cleaned = fnCleanText(Typed, {"LeadID","AccountID","LeadSource","Industry","Status","SalesRepID"}, {"LeadID","AccountID","SalesRepID"})
+				in
+				    Cleaned
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

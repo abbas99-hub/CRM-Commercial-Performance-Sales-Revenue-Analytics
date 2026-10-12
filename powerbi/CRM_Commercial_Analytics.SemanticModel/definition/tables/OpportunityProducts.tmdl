@@ -1,0 +1,87 @@
+/// FACT | Grain: one row per opportunity-product line (28,911). USE FOR PRODUCT MIX ONLY: LineRevenue totals ~5.0x opportunity EstimatedRevenue and does not reconcile.
+table OpportunityProducts
+	lineageTag: 0445ad7e-e2b9-40db-85d8-5a56439b8c6e
+
+	column OpportunityID
+		dataType: string
+		isHidden
+		lineageTag: d7b63fe5-c9da-494a-891d-957d978fbc5f
+		summarizeBy: none
+		sourceColumn: OpportunityID
+
+		annotation SummarizationSetBy = Automatic
+
+	column ProductID
+		dataType: string
+		isHidden
+		lineageTag: 21d1d9ae-f801-4d1b-90d4-0b3cc8db3fc1
+		summarizeBy: none
+		sourceColumn: ProductID
+
+		annotation SummarizationSetBy = Automatic
+
+	column Quantity
+		dataType: int64
+		formatString: 0
+		lineageTag: 7f8454a2-b6ea-45c0-a223-d688b7f6439e
+		summarizeBy: sum
+		sourceColumn: Quantity
+
+		annotation SummarizationSetBy = Automatic
+
+	column DiscountPct
+		dataType: double
+		formatString: 0.0%
+		lineageTag: 9b64a4cd-e314-4d6a-b6e8-7f800c2735c2
+		summarizeBy: none
+		sourceColumn: DiscountPct
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column LineRevenue
+		dataType: double
+		formatString: "AED "#,0
+		lineageTag: c8655cef-7eff-42c8-a627-7a58a87cc048
+		summarizeBy: sum
+		sourceColumn: LineRevenue
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column EstimatedCost
+		dataType: double
+		formatString: "AED "#,0
+		lineageTag: 1e3e07eb-61b6-439f-b8c2-b012cba8713b
+		summarizeBy: sum
+		sourceColumn: EstimatedCost
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	/// Share of the opportunity's REAL EstimatedRevenue attributed to this product line, pro-rata by LineRevenue. Sums back to the opportunity's revenue (opportunities with no product line are unallocated). Use this, not LineRevenue, for revenue by product: LineRevenue totals 5.0x EstimatedRevenue.
+	column 'Allocated Revenue' = VAR OppLineTotal = CALCULATE ( SUM ( OpportunityProducts[LineRevenue] ), ALLEXCEPT ( OpportunityProducts, OpportunityProducts[OpportunityID] ) ) RETURN DIVIDE ( OpportunityProducts[LineRevenue], OppLineTotal ) * RELATED ( Opportunities[EstimatedRevenue] )
+		dataType: double
+		formatString: "AED "#,0
+		displayFolder: Allocation
+		lineageTag: 812466f0-b74c-4005-954a-36d4a4b300bf
+		summarizeBy: sum
+
+	partition OpportunityProducts = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents(SourceFolder & "OpportunityProducts.csv"),[Delimiter=",", Columns=6, Encoding=1252, QuoteStyle=QuoteStyle.None]),
+				    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+				    Typed = Table.TransformColumnTypes(Promoted,{{"OpportunityID", type text}, {"ProductID", type text}, {"Quantity", Int64.Type}, {"DiscountPct", type number}, {"LineRevenue", type number}, {"EstimatedCost", type number}}),
+				    Cleaned = fnCleanText(Typed, {"OpportunityID","ProductID"}, {"OpportunityID","ProductID"})
+				in
+				    Cleaned
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

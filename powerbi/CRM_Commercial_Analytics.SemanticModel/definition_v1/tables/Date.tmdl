@@ -1,0 +1,111 @@
+/// DATE TABLE | One row per day, 1 Jan 2024 to 31 Dec 2026, no gaps, Date is unique. DataCategory = Time. Role-playing: Opportunities uses ReportingCloseDate (active); CreatedDate/ExpectedCloseDate/ActualCloseDate are inactive (use USERELATIONSHIP). Leads: CreatedDate active, ConvertedDate inactive.
+table Date
+	lineageTag: 1d0e0d02-b821-4320-88eb-2ee3b8113a24
+	dataCategory: Time
+
+	column Date
+		dataType: dateTime
+		isUnique
+		formatString: dd mmm yyyy
+		lineageTag: 132c51d7-f0df-45c8-a45f-ab88a13b1123
+		summarizeBy: none
+		sourceColumn: Date
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column Year
+		dataType: int64
+		formatString: 0
+		lineageTag: de535907-377f-4082-915a-050e7d3a858b
+		summarizeBy: none
+		sourceColumn: Year
+
+		annotation SummarizationSetBy = Automatic
+
+	column MonthNumber
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 005416c1-1e47-4d1e-973c-50c63851b90f
+		summarizeBy: none
+		sourceColumn: MonthNumber
+
+		annotation SummarizationSetBy = Automatic
+
+	column Month
+		dataType: string
+		lineageTag: 38f478d4-ab8c-4669-b975-dc31d4f50e32
+		summarizeBy: none
+		sourceColumn: Month
+		sortByColumn: MonthNumber
+
+		annotation SummarizationSetBy = Automatic
+
+	column YearMonth
+		dataType: dateTime
+		formatString: mmm yyyy
+		lineageTag: 3f30df08-a600-461e-adc9-1420b17ad9d8
+		summarizeBy: none
+		sourceColumn: YearMonth
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column Quarter
+		dataType: string
+		lineageTag: a0065f03-a414-475f-9132-6c985aaf2919
+		summarizeBy: none
+		sourceColumn: Quarter
+
+		annotation SummarizationSetBy = Automatic
+
+	column WeekNumber
+		dataType: int64
+		formatString: 0
+		lineageTag: ad52ac7e-b6f1-49e4-9685-8749c255bf2d
+		summarizeBy: none
+		sourceColumn: WeekNumber
+
+		annotation SummarizationSetBy = Automatic
+
+	column IsMonthEnd
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 0464b3f3-0e87-45a7-9a01-6f7b421e3a73
+		summarizeBy: none
+		sourceColumn: IsMonthEnd
+
+		annotation SummarizationSetBy = Automatic
+
+	hierarchy Calendar
+		lineageTag: a8a2c052-0397-47e7-82ed-9f1a0650917a
+
+		level Year
+			lineageTag: 34af6ffd-0c69-4baa-b785-eb1a1f9176de
+			column: Year
+
+		level Quarter
+			lineageTag: e27fba67-72df-4b7a-92bb-8d2d99de0d54
+			column: Quarter
+
+		level Month
+			lineageTag: 94eaffd8-a0b6-47a6-b5a2-bc53c9dc0ffb
+			column: Month
+
+	partition Date = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents(SourceFolder & "Date.csv"),[Delimiter=",", Columns=8, Encoding=1252, QuoteStyle=QuoteStyle.None]),
+				    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+				    Typed = Table.TransformColumnTypes(Promoted,{{"Date", type date}, {"Year", Int64.Type}, {"MonthNumber", Int64.Type}, {"Month", type text}, {"YearMonth", type date}, {"Quarter", type text}, {"WeekNumber", Int64.Type}, {"IsMonthEnd", type logical}})
+				in
+				    Typed
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

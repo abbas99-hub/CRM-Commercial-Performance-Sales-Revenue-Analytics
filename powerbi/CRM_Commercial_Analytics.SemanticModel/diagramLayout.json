@@ -1,0 +1,217 @@
+{
+  "version": "1.1.0",
+  "diagrams": [
+    {
+      "ordinal": 0,
+      "scrollPosition": {
+        "x": 0,
+        "y": 0
+      },
+      "nodes": [
+        {
+          "location": {
+            "x": 2554.5293117854885,
+            "y": 218.66285706341023
+          },
+          "nodeIndex": "Accounts",
+          "nodeLineageTag": "6072f43e-95f9-4110-9a8c-d5e15b0f91be",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 907.89511515380514,
+            "y": 415.32571412682046
+          },
+          "nodeIndex": "Activities",
+          "nodeLineageTag": "20abda50-17b2-4a4d-8ae7-1163a2bb83c2",
+          "size": {
+            "height": 272,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 2036.5293117854885,
+            "y": 256.66285706341023
+          },
+          "nodeIndex": "Campaigns",
+          "nodeLineageTag": "5a702bb6-e4a1-4794-8dab-75981716a270",
+          "size": {
+            "height": 224,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 50.029116757162058,
+            "y": -50
+          },
+          "nodeIndex": "Contacts",
+          "nodeLineageTag": "f208df88-951d-4434-83a8-6822292dd216",
+          "size": {
+            "height": 200,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 2320.5293117854885,
+            "y": 232.66285706341023
+          },
+          "nodeIndex": "Date",
+          "nodeLineageTag": "1d0e0d02-b821-4320-88eb-2ee3b8113a24",
+          "size": {
+            "height": 272,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 908.287091257487,
+            "y": 1.2674092687034317
+          },
+          "nodeIndex": "Leads",
+          "nodeLineageTag": "ec9596f3-ec8b-4de2-96e3-fd4f3b0e17ff",
+          "size": {
+            "height": 296,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 2788.5293117854885,
+            "y": 218.66285706341023
+          },
+          "nodeIndex": "Opportunities",
+          "nodeLineageTag": "92c82a51-ddcb-4c9a-a222-f9b6e28a06ef",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 1802.5293117854885,
+            "y": 206.66285706341023
+          },
+          "nodeIndex": "OpportunityProducts",
+          "nodeLineageTag": "0445ad7e-e2b9-40db-85d8-5a56439b8c6e",
+          "size": {
+            "height": 224,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 1518.5293117854885,
+            "y": 206.66285706341023
+          },
+          "nodeIndex": "Products",
+          "nodeLineageTag": "75df3f82-f92b-48a0-a6d2-8458cc6e6150",
+          "size": {
+            "height": 224,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 1234.5293117854885,
+            "y": 291.63514253587755
+          },
+          "nodeIndex": "SalesReps",
+          "nodeLineageTag": "46e76556-cc50-41b8-90ab-04483f3559ee",
+          "size": {
+            "height": 224,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 621.72529954464073,
+            "y": 265.30055779950362
+          },
+          "nodeIndex": "Targets",
+          "nodeLineageTag": "53b5ffce-b50e-4f78-bbf1-74bf43824d09",
+          "size": {
+            "height": 200,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 3022.5001950283263,
+            "y": 316.66285706341023
+          },
+          "nodeIndex": "_Measures",
+          "nodeLineageTag": "422ad04f-3c65-44a1-880b-3adc14d10232",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 3306.5001950283263,
+            "y": 316.66285706341023
+          },
+          "nodeIndex": "Stale Threshold",
+          "nodeLineageTag": "3b391aa4-4239-4366-9272-e8c99f0073c8",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 3540.4710782711641,
+            "y": 304.66285706341023
+          },
+          "nodeIndex": "DQ Checks",
+          "nodeLineageTag": "41b1fd27-0ccd-453b-ab95-c301ecd390e7",
+          "size": {
+            "height": 128,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 3774.4419615140018,
+            "y": 304.66285706341023
+          },
+          "nodeIndex": "Insights",
+          "nodeLineageTag": "1026e7c3-2054-403b-86cc-4e7851723c91",
+          "size": {
+            "height": 128,
+            "width": 234
+          },
+          "zIndex": 0
+        }
+      ],
+      "name": "All tables",
+      "zoomValue": 100,
+      "pinKeyFieldsToTop": false,
+      "showExtraHeaderInfo": false,
+      "hideKeyFieldsWhenCollapsed": false,
+      "tablesLocked": false
+    }
+  ],
+  "selectedDiagram": "All tables",
+  "defaultDiagram": "All tables"
+}

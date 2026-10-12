@@ -1,0 +1,71 @@
+/// DIMENSION | One row per marketing campaign (30). Opportunities with no campaign show as (Blank).
+table Campaigns
+	lineageTag: 5a702bb6-e4a1-4794-8dab-75981716a270
+
+	column CampaignID
+		dataType: string
+		lineageTag: cd530847-1f2c-45e8-a664-1ad3c12f04b8
+		summarizeBy: none
+		sourceColumn: CampaignID
+
+		annotation SummarizationSetBy = Automatic
+
+	column CampaignName
+		dataType: string
+		lineageTag: 827b9f17-43b5-4e06-8958-ee4f69cafd14
+		summarizeBy: none
+		sourceColumn: CampaignName
+
+		annotation SummarizationSetBy = Automatic
+
+	column CampaignType
+		dataType: string
+		lineageTag: 288c5f33-59d5-49ae-bb79-94e4c453ae93
+		summarizeBy: none
+		sourceColumn: CampaignType
+
+		annotation SummarizationSetBy = Automatic
+
+	column StartDate
+		dataType: dateTime
+		formatString: dd mmm yyyy
+		lineageTag: 99581f28-bf5f-4467-b853-8be153b86a0f
+		summarizeBy: none
+		sourceColumn: StartDate
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column Budget
+		dataType: int64
+		formatString: "AED "#,0
+		lineageTag: f1842e28-0a62-49ea-b29b-5a3cadc93e88
+		summarizeBy: none
+		sourceColumn: Budget
+
+		annotation SummarizationSetBy = Automatic
+
+	column TargetSegment
+		dataType: string
+		lineageTag: b9628129-3fd9-459e-b201-628a1e711343
+		summarizeBy: none
+		sourceColumn: TargetSegment
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Campaigns = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents(SourceFolder & "Campaigns.csv"),[Delimiter=",", Columns=6, Encoding=1252, QuoteStyle=QuoteStyle.None]),
+				    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+				    Typed = Table.TransformColumnTypes(Promoted,{{"CampaignID", type text}, {"CampaignName", type text}, {"CampaignType", type text}, {"StartDate", type date}, {"Budget", Int64.Type}, {"TargetSegment", type text}}),
+				    Cleaned = fnCleanText(Typed, {"CampaignID","CampaignName","CampaignType","TargetSegment"}, {"CampaignID"})
+				in
+				    Cleaned
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

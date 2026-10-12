@@ -1,0 +1,85 @@
+relationship AutoDetected_03fac142-56a7-4207-9ca3-f7cdbe0eaaa9
+	fromColumn: Activities.SalesRepID
+	toColumn: SalesReps.SalesRepID
+
+relationship AutoDetected_cada7cd8-ce59-4bcb-88ec-ca17a56f41cd
+	fromColumn: Leads.SalesRepID
+	toColumn: SalesReps.SalesRepID
+
+relationship AutoDetected_88c99367-4b68-46e6-b9c9-2581c7e42925
+	fromColumn: Targets.SalesRepID
+	toColumn: SalesReps.SalesRepID
+
+relationship AutoDetected_d085f989-d03b-4173-8226-b4ba9802f142
+	fromColumn: OpportunityProducts.ProductID
+	toColumn: Products.ProductID
+
+relationship Opportunities_Accounts
+	fromColumn: Opportunities.AccountID
+	toColumn: Accounts.AccountID
+
+relationship Activities_Accounts
+	fromColumn: Activities.AccountID
+	toColumn: Accounts.AccountID
+
+relationship Contacts_Accounts
+	fromColumn: Contacts.AccountID
+	toColumn: Accounts.AccountID
+
+relationship Leads_Accounts
+	fromColumn: Leads.AccountID
+	toColumn: Accounts.AccountID
+
+relationship Opportunities_SalesReps
+	fromColumn: Opportunities.SalesRepID
+	toColumn: SalesReps.SalesRepID
+
+relationship Opportunities_Campaigns
+	fromColumn: Opportunities.CampaignID
+	toColumn: Campaigns.CampaignID
+
+relationship Opportunities_Date_ReportingClose
+	fromColumn: Opportunities.ReportingCloseDate
+	toColumn: Date.Date
+
+relationship OpportunityProducts_Opportunities
+	fromColumn: OpportunityProducts.OpportunityID
+	toColumn: Opportunities.OpportunityKey
+
+relationship Activities_Date
+	fromColumn: Activities.ActivityDate
+	toColumn: Date.Date
+
+relationship Leads_Date_Created
+	fromColumn: Leads.CreatedDate
+	toColumn: Date.Date
+
+relationship Targets_Date
+	fromColumn: Targets.Month
+	toColumn: Date.Date
+
+relationship Opportunities_Date_Created
+	isActive: false
+	fromColumn: Opportunities.CreatedDate
+	toColumn: Date.Date
+
+relationship Opportunities_Date_ExpectedClose
+	isActive: false
+	fromColumn: Opportunities.ExpectedCloseDate
+	toColumn: Date.Date
+
+relationship Opportunities_Date_ActualClose
+	isActive: false
+	fromColumn: Opportunities.ActualCloseDate
+	toColumn: Date.Date
+
+relationship Leads_Date_Converted
+	isActive: false
+	fromColumn: Leads.ConvertedDate
+	toColumn: Date.Date
+
+relationship Activities_Opportunities
+	isActive: false
+	fromColumn: Activities.OpportunityID
+	toColumn: Opportunities.OpportunityKey
+

@@ -1,0 +1,26 @@
+/// PARAMETER | Disconnected list of data-quality checks for the CRM Data Quality panel. Counts come from [DQ Issue Count]. Not related to any table by design.
+table 'DQ Checks'
+	lineageTag: 41b1fd27-0ccd-453b-ab95-c301ecd390e7
+
+	column Check
+		dataType: string
+		lineageTag: 7cab764c-f978-4967-9167-6792618637e3
+		summarizeBy: none
+		sourceColumn: Check
+		sortByColumn: 'Check Order'
+
+	column 'Check Order'
+		dataType: int64
+		isHidden
+		lineageTag: c49afaa8-817c-4997-b3f8-5a3ac3f30664
+		summarizeBy: none
+		sourceColumn: Check Order
+
+	partition 'DQ Checks' = m
+		mode: import
+		source =
+				let
+				    Source = #table(type table [Check = text, #"Check Order" = Int64.Type], {{"Duplicate opportunity IDs", 1}, {"Missing sales owner", 2}, {"Missing close date", 3}, {"Unknown stage", 4}, {"Zero-value opportunities", 5}, {"Closed on extract date (suspect)", 6}, {"Expected close = extract date (suspect)", 7}})
+				in
+				    Source
+

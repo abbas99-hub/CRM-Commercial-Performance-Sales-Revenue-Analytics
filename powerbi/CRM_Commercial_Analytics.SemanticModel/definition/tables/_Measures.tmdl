@@ -1,0 +1,1064 @@
+/// MEASURES | Home table for all KPI measures. No data. Organised by display folder: 00 Config, 01 Revenue, 02 Pipeline, 03 Forecast, 04 Sales Execution, 05 Data Quality.
+table _Measures
+	lineageTag: 422ad04f-3c65-44a1-880b-3adc14d10232
+
+	/// Reporting reference date = latest date present in the data (30 Sep 2026), NOT TODAY(). Keeps overdue/stale logic consistent with the extract. To go live, replace with TODAY().
+	measure 'As-Of Date' = MAXX ( { CALCULATE ( MAX ( Opportunities[CreatedDate] ), ALL ( Opportunities ) ), CALCULATE ( MAX ( Activities[ActivityDate] ), ALL ( Activities ) ) }, [Value] )
+		formatString: dd mmm yyyy
+		displayFolder: 00 Config
+		lineageTag: c4fe17ac-e7e7-498a-8ba8-f8115a9ff976
+
+	/// Days without an activity on the opportunity's account before it is stale. Driven by the 'Stale Threshold' slicer; defaults to 30.
+	measure 'Stale Threshold Days' = SELECTEDVALUE ( 'Stale Threshold'[Stale Days], 30 )
+		formatString: 0" days"
+		displayFolder: 00 Config
+		lineageTag: 68192228-597e-464e-9161-6aa16f6c9e0b
+
+	/// Look-ahead window for 'closing soon' pipeline.
+	measure 'Closing Soon Window Days' = 30
+		formatString: 0" days"
+		displayFolder: 00 Config
+		lineageTag: c3a38072-8370-4065-a216-bfe03ecc7231
+
+	/// An open deal is only 'at risk' for being overdue once it is more than this many days past its expected close date.
+	measure 'Overdue Grace Days' = 30
+		formatString: 0" days"
+		displayFolder: 00 Config
+		lineageTag: 8fcb4cb1-04b3-4ecc-b393-687bd7dd44a1
+
+	/// Sum of EstimatedRevenue for Closed Won opportunities, by close date (ReportingCloseDate = ActualCloseDate for won deals). Includes all 15,000 source records so it reconciles to the CRM export.
+	measure 'Won Revenue' = CALCULATE ( SUM ( Opportunities[EstimatedRevenue] ), Opportunities[IsWon] = TRUE () )
+		formatString: """AED ""#,0.0,,""M"""
+		displayFolder: 01 Revenue
+		lineageTag: 3cabaab5-47ab-4ae2-8e0c-ba369d245e3d
+
+	measure 'Won Deals' = CALCULATE ( COUNTROWS ( Opportunities ), Opportunities[IsWon] = TRUE () )
+		formatString: #,0
+		displayFolder: 01 Revenue
+		lineageTag: 1a42095b-3597-4fbe-b38d-6fb8fe1ab879
+
+	measure 'Lost Deals' = CALCULATE ( COUNTROWS ( Opportunities ), Opportunities[IsLost] = TRUE () )
+		formatString: #,0
+		displayFolder: 01 Revenue
+		lineageTag: 09fdef7c-8fc7-457e-9525-5ae83297b5f4
+
+	measure 'Lost Revenue' = CALCULATE ( SUM ( Opportunities[EstimatedRevenue] ), Opportunities[IsLost] = TRUE () )
+		formatString: """AED ""#,0.0,,""M"""
+		displayFolder: 01 Revenue
+		lineageTag: 18583472-4fd5-4823-8100-9f90e54212e1
+
+	measure 'Closed Deals' = [Won Deals] + [Lost Deals]
+		formatString: #,0
+		displayFolder: 01 Revenue
+		lineageTag: e8903e2f-637b-4f8f-9b4e-8a336960bd8b
+
+	/// Won deals / (Won + Lost). Open and Unknown-stage deals are excluded.
+	measure 'Win Rate %' = DIVIDE ( [Won Deals], [Closed Deals] )
+		formatString: 0.0%
+		displayFolder: 01 Revenue
+		lineageTag: f10415cb-3208-434a-ad26-ccbdb3e65d57
+
+	measure 'Win Rate % (Value)' = DIVIDE ( [Won Revenue], [Won Revenue] + [Lost Revenue] )
+		formatString: 0.0%
+		displayFolder: 01 Revenue
+		lineageTag: b4ea72a8-068e-4c9f-bb7d-b05fe02d085a
+
+	measure 'Avg Won Deal Size' = DIVIDE ( [Won Revenue], [Won Deals] )
+		formatString: "AED "#,0
+		displayFolder: 01 Revenue
+		lineageTag: 7d41e8a1-abda-47e2-8dab-ac858e5cca45
+
+	/// Average days from creation to actual close, won deals only.
+	measure 'Avg Sales Cycle (Days)' = CALCULATE ( AVERAGE ( Opportunities[SalesCycleDays] ), Opportunities[IsWon] = TRUE () )
+		formatString: 0.0
+		displayFolder: 01 Revenue
+		lineageTag: 516a6306-b0d6-45a3-a0d1-66c7e3bff6dd
+
+	/// Sum of monthly rep targets for the selected period/reps. Returns BLANK when sliced by Account, Campaign or Opportunity attributes, because targets are not defined at those grains (would give misleading attainment).
+	measure 'Revenue Target' = IF ( ISFILTERED ( Accounts ) || ISFILTERED ( Campaigns ) || ISFILTERED ( Opportunities ), BLANK (), SUM ( Targets[RevenueTarget] ) )
+		formatString: """AED ""#,0.0,,""M"""
+		displayFolder: 01 Revenue
+		lineageTag: d5798fed-fdb1-44f5-aee6-4dcb2ad58099
+
+	measure 'Target Attainment %' = DIVIDE ( [Won Revenue], [Revenue Target] )
+		formatString: 0.0%
+		displayFolder: 01 Revenue
+		lineageTag: d39fa517-cd5b-4320-90b0-77dbcb18626b
+
+	/// Target minus Won Revenue. Positive = still to win; negative = target exceeded.
+	measure 'Revenue Gap to Target' = IF ( ISBLANK ( [Revenue Target] ), BLANK (), [Revenue Target] - [Won Revenue] )
+		formatString: """AED ""#,0.0,,""M"";-""AED ""#,0.0,,""M"""
+		displayFolder: 01 Revenue
+		lineageTag: ce4abd54-a076-4074-8f03-ffb3f8c5845d
+
+	/// Won revenue in the same period of the prior year, like-for-like: cut off at [PY Cutoff Date] so a part-year (e.g. Jan-Sep 2026) is compared with Jan-Sep 2025. CORRECTED in Stage 5: previously compared 9 months with 12.
+	measure 'Won Revenue PY' = VAR Cutoff = [PY Cutoff Date] RETURN CALCULATE ( [Won Revenue], SAMEPERIODLASTYEAR ( 'Date'[Date] ), KEEPFILTERS ( 'Date'[Date] <= Cutoff ) )
+		formatString: """AED ""#,0.0,,""M"""
+		displayFolder: 01 Revenue
+		lineageTag: 78eaae82-0cdb-46ba-b481-2bdf658fab57
+
+	measure 'Won Revenue YoY %' = DIVIDE ( [Won Revenue] - [Won Revenue PY], [Won Revenue PY] )
+		formatString: 0.0%;-0.0%
+		displayFolder: 01 Revenue
+		lineageTag: b6d4e56e-9d98-467f-8970-1a2022dcc98c
+
+	measure 'Won Revenue YTD' = TOTALYTD ( [Won Revenue], 'Date'[Date] )
+		formatString: """AED ""#,0.0,,""M"""
+		displayFolder: 01 Revenue
+		lineageTag: 5f9dda18-6b2d-4566-8fd8-f5cdae0081ea
+
+	/// Share of Won Revenue within the current selection (use with Industry / Account on an axis).
+	measure 'Revenue Share %' = DIVIDE ( [Won Revenue], CALCULATE ( [Won Revenue], ALLSELECTED () ) )
+		formatString: 0.0%
+		displayFolder: 01 Revenue
+		lineageTag: 8d7d57a8-5fdf-4003-801c-7d8a6348867e
+
+	/// EstimatedRevenue of open deals (Qualification, Needs Analysis, Proposal, Negotiation). Unknown-stage deals excluded. Date slicers filter by expected close date; deals with no close date drop out when a date filter is applied.
+	measure 'Open Pipeline' = CALCULATE ( SUM ( Opportunities[EstimatedRevenue] ), Opportunities[IsOpen] = TRUE () )
+		formatString: """AED ""#,0.0,,""M"""
+		displayFolder: 02 Pipeline
+		lineageTag: ad23db18-1c87-4625-9993-6d5cd6b041c5
+
+	measure 'Open Deals' = CALCULATE ( COUNTROWS ( Opportunities ), Opportunities[IsOpen] = TRUE () )
+		formatString: #,0
+		displayFolder: 02 Pipeline
+		lineageTag: 8245b0fa-326a-482c-a303-9cce34868c63
+
+	measure 'Avg Open Deal Size' = DIVIDE ( [Open Pipeline], [Open Deals] )
+		formatString: "AED "#,0
+		displayFolder: 02 Pipeline
+		lineageTag: 7cd8d52a-09ef-458d-8d97-e9301bfa6f50
+
+	/// Open pipeline x stage probability (ProbabilityPct / 100). Probability-weighted only; ignores deal age and activity.
+	measure 'Weighted Pipeline' = CALCULATE ( SUM ( Opportunities[WeightedRevenue] ), Opportunities[IsOpen] = TRUE () )
+		formatString: """AED ""#,0.0,,""M"""
+		displayFolder: 02 Pipeline
+		lineageTag: ca855933-1c6d-4f41-8836-8d9c0ef197d3
+
+	measure 'Weighted % of Open Pipeline' = DIVIDE ( [Weighted Pipeline], [Open Pipeline] )
+		formatString: 0.0%
+		displayFolder: 02 Pipeline
+		lineageTag: 9cc7e0eb-b23d-4659-8cb1-37c947221015
+
+	/// Share of open pipeline within the current selection (use with Stage on an axis).
+	measure 'Pipeline Stage Share %' = DIVIDE ( [Open Pipeline], CALCULATE ( [Open Pipeline], ALLSELECTED ( Opportunities[Stage] ) ) )
+		formatString: 0.0%
+		displayFolder: 02 Pipeline
+		lineageTag: 7260856b-bef3-4746-88d4-42d32a8aedfa
+
+	/// New pipeline created in the period (all deals by CreatedDate, any current stage).
+	measure 'Pipeline Created' = CALCULATE ( SUM ( Opportunities[EstimatedRevenue] ), USERELATIONSHIP ( Opportunities[CreatedDate], 'Date'[Date] ) )
+		formatString: """AED ""#,0.0,,""M"""
+		displayFolder: 02 Pipeline
+		lineageTag: 9aed5def-971a-4834-ac54-19f331853482
+
+	measure 'Deals Created' = CALCULATE ( COUNTROWS ( Opportunities ), USERELATIONSHIP ( Opportunities[CreatedDate], 'Date'[Date] ) )
+		formatString: #,0
+		displayFolder: 02 Pipeline
+		lineageTag: 31b70b57-6987-4a9f-8e14-826bc64cf31b
+
+	/// Open Pipeline / remaining target (Target - Won). BLANK if the target is already met or not defined for the slice. Common benchmark: 3x.
+	measure 'Pipeline Coverage (x)' = VAR Gap = [Revenue Gap to Target] RETURN IF ( ISBLANK ( Gap ) || Gap <= 0, BLANK (), DIVIDE ( [Open Pipeline], Gap ) )
+		formatString: 0.0"x"
+		displayFolder: 02 Pipeline
+		lineageTag: 35c8797d-2bdc-4301-b335-894dbb86e224
+
+	measure 'Weighted Pipeline Coverage (x)' = VAR Gap = [Revenue Gap to Target] RETURN IF ( ISBLANK ( Gap ) || Gap <= 0, BLANK (), DIVIDE ( [Weighted Pipeline], Gap ) )
+		formatString: 0.00"x"
+		displayFolder: 02 Pipeline
+		lineageTag: 89ac321e-3668-4964-8e70-aee6b26b44b3
+
+	/// Open pipeline in the Negotiation stage (derived forecast category 'Commit'). Uses the derived category because the source ForecastCategory contradicts the stage.
+	measure 'Commit Pipeline' = CALCULATE ( [Open Pipeline], Opportunities[ForecastCategoryDerived] = "Commit" )
+		formatString: """AED ""#,0.0,,""M"""
+		displayFolder: 03 Forecast
+		lineageTag: 76c77e51-970a-4510-be40-a8e6b20c6c39
+
+	/// Open pipeline in the Proposal stage (derived category 'Best Case').
+	measure 'Best Case Pipeline' = CALCULATE ( [Open Pipeline], Opportunities[ForecastCategoryDerived] = "Best Case" )
+		formatString: """AED ""#,0.0,,""M"""
+		displayFolder: 03 Forecast
+		lineageTag: b55bdeba-74ce-40fa-b179-d32dddf4bc9a
+
+	/// Open pipeline in Qualification / Needs Analysis (derived category 'Pipeline').
+	measure 'Early Stage Pipeline' = CALCULATE ( [Open Pipeline], Opportunities[ForecastCategoryDerived] = "Pipeline" )
+		formatString: """AED ""#,0.0,,""M"""
+		displayFolder: 03 Forecast
+		lineageTag: c7889fe7-3012-4cff-8846-ecc93d904b8f
+
+	/// Won revenue + probability-weighted open pipeline. Optimistic: counts overdue and stale deals at full stage probability. Compare with Realistic Expected Revenue.
+	measure 'Expected Revenue' = [Won Revenue] + [Weighted Pipeline]
+		formatString: """AED ""#,0.0,,""M"""
+		displayFolder: 03 Forecast
+		lineageTag: e137ee1e-5905-4b07-96ba-e17bccf04a45
+
+	measure 'Forecast Attainment %' = DIVIDE ( [Expected Revenue], [Revenue Target] )
+		formatString: 0.0%
+		displayFolder: 03 Forecast
+		lineageTag: 2101edf0-54c7-48bd-bd5c-c4374fd58824
+
+	/// Open deals whose expected close date is before the As-Of Date.
+	measure 'Overdue Open Deals' = VAR AsOf = [As-Of Date] RETURN CALCULATE ( COUNTROWS ( Opportunities ), Opportunities[IsOpen] = TRUE (), FILTER ( VALUES ( Opportunities[ExpectedCloseDate] ), NOT ISBLANK ( Opportunities[ExpectedCloseDate] ) && Opportunities[ExpectedCloseDate] < AsOf ) )
+		formatString: #,0
+		displayFolder: 03 Forecast
+		lineageTag: 5266c2f5-f2d5-4e97-b4ff-5d8375571f61
+
+	measure 'Overdue Pipeline' = VAR AsOf = [As-Of Date] RETURN CALCULATE ( [Open Pipeline], FILTER ( VALUES ( Opportunities[ExpectedCloseDate] ), NOT ISBLANK ( Opportunities[ExpectedCloseDate] ) && Opportunities[ExpectedCloseDate] < AsOf ) )
+		formatString: """AED ""#,0.0,,""M"""
+		displayFolder: 03 Forecast
+		lineageTag: 08f50aa6-050b-4124-9d38-c38e34f88edd
+
+	measure 'Overdue % of Open Pipeline' = DIVIDE ( [Overdue Pipeline], [Open Pipeline] )
+		formatString: 0.0%
+		displayFolder: 03 Forecast
+		lineageTag: 5f8b9466-2b92-4a7e-9ca5-be655888d9ed
+
+	/// Severely aged: expected close more than 90 days before the As-Of Date.
+	measure 'Overdue >90d Pipeline' = VAR AsOf = [As-Of Date] RETURN CALCULATE ( [Open Pipeline], FILTER ( VALUES ( Opportunities[ExpectedCloseDate] ), NOT ISBLANK ( Opportunities[ExpectedCloseDate] ) && Opportunities[ExpectedCloseDate] < AsOf - 90 ) )
+		formatString: """AED ""#,0.0,,""M"""
+		displayFolder: 03 Forecast
+		lineageTag: 200ce887-c3a7-4a87-89d6-e5c25f7b2da3
+
+	/// Open deals expected to close between the As-Of Date and As-Of Date + window. NOTE: expected close dates in this extract are capped at 30 Sep 2026, so this window only captures deals dated exactly on the As-Of Date.
+	measure 'Closing Soon Deals' = VAR AsOf = [As-Of Date] VAR Win = [Closing Soon Window Days] RETURN CALCULATE ( COUNTROWS ( Opportunities ), Opportunities[IsOpen] = TRUE (), FILTER ( VALUES ( Opportunities[ExpectedCloseDate] ), NOT ISBLANK ( Opportunities[ExpectedCloseDate] ) && Opportunities[ExpectedCloseDate] >= AsOf && Opportunities[ExpectedCloseDate] <= AsOf + Win ) )
+		formatString: #,0
+		displayFolder: 03 Forecast
+		lineageTag: 9f479223-cede-4e53-a700-7efa3f7c0c28
+
+	measure 'Closing Soon Pipeline' = VAR AsOf = [As-Of Date] VAR Win = [Closing Soon Window Days] RETURN CALCULATE ( [Open Pipeline], FILTER ( VALUES ( Opportunities[ExpectedCloseDate] ), NOT ISBLANK ( Opportunities[ExpectedCloseDate] ) && Opportunities[ExpectedCloseDate] >= AsOf && Opportunities[ExpectedCloseDate] <= AsOf + Win ) )
+		formatString: """AED ""#,0.0,,""M"""
+		displayFolder: 03 Forecast
+		lineageTag: fc653bb6-a898-4bb3-9b53-6c065efe0b7a
+
+	/// Open deals with an EXPIRED date or a STALE account or NO close date. At risk if ANY of: (1) expected close more than [Overdue Grace Days] before the As-Of Date, (2) no expected close date, (3) no activity on the deal's account within [Stale Threshold Days] (activity's own account).
+	measure 'At-Risk Pipeline' = VAR AsOf = [As-Of Date] VAR Grace = [Overdue Grace Days] VAR Thr = [Stale Threshold Days] RETURN SUMX ( FILTER ( CALCULATETABLE ( Opportunities, Opportunities[IsOpen] = TRUE () ), VAR D = Opportunities[ExpectedCloseDate] VAR LastAct = RELATED ( Accounts[Last Activity Date] ) RETURN ISBLANK ( D ) || D < AsOf - Grace || ISBLANK ( LastAct ) || LastAct < AsOf - Thr ), Opportunities[EstimatedRevenue] )
+		formatString: """AED ""#,0.0,,""M"""
+		displayFolder: 03 Forecast
+		lineageTag: d6a2c217-e58c-4929-8a0a-5c10579f6249
+
+	measure 'At-Risk Deals' = VAR AsOf = [As-Of Date] VAR Grace = [Overdue Grace Days] VAR Thr = [Stale Threshold Days] RETURN COUNTROWS ( FILTER ( CALCULATETABLE ( Opportunities, Opportunities[IsOpen] = TRUE () ), VAR D = Opportunities[ExpectedCloseDate] VAR LastAct = RELATED ( Accounts[Last Activity Date] ) RETURN ISBLANK ( D ) || D < AsOf - Grace || ISBLANK ( LastAct ) || LastAct < AsOf - Thr ) )
+		formatString: #,0
+		displayFolder: 03 Forecast
+		lineageTag: d42555e6-008f-4675-9ff7-3a71752abc40
+
+	measure 'At-Risk % of Open Pipeline' = DIVIDE ( [At-Risk Pipeline], [Open Pipeline] )
+		formatString: 0.0%
+		displayFolder: 03 Forecast
+		lineageTag: befb8931-a8f7-49db-b2b6-6ceec3b65be1
+
+	/// Open pipeline NOT at risk: dated, within the overdue grace period, and on an account with recent activity.
+	measure 'Healthy Pipeline' = [Open Pipeline] - [At-Risk Pipeline]
+		formatString: """AED ""#,0.0,,""M"""
+		displayFolder: 03 Forecast
+		lineageTag: cb6f53c2-ee2a-4b6c-af93-b7880ac0c830
+
+	/// Probability-weighted value of healthy open deals only. The realistic share of pipeline expected to convert.
+	measure 'Healthy Weighted Pipeline' = VAR AsOf = [As-Of Date] VAR Grace = [Overdue Grace Days] VAR Thr = [Stale Threshold Days] RETURN SUMX ( FILTER ( CALCULATETABLE ( Opportunities, Opportunities[IsOpen] = TRUE () ), VAR D = Opportunities[ExpectedCloseDate] VAR LastAct = RELATED ( Accounts[Last Activity Date] ) RETURN NOT ISBLANK ( D ) && D >= AsOf - Grace && NOT ISBLANK ( LastAct ) && LastAct >= AsOf - Thr ), Opportunities[WeightedRevenue] )
+		formatString: """AED ""#,0.0,,""M"""
+		displayFolder: 03 Forecast
+		lineageTag: b43aaa37-54b2-4520-9775-a3eee280384a
+
+	/// Won Revenue + Healthy Weighted Pipeline. The conservative counterpart to Expected Revenue.
+	measure 'Realistic Expected Revenue' = [Won Revenue] + [Healthy Weighted Pipeline]
+		formatString: """AED ""#,0.0,,""M"""
+		displayFolder: 03 Forecast
+		lineageTag: 0959f907-265e-4f54-a2b2-18c006a2c00b
+
+	measure 'Realistic Forecast Attainment %' = DIVIDE ( [Realistic Expected Revenue], [Revenue Target] )
+		formatString: 0.0%
+		displayFolder: 03 Forecast
+		lineageTag: 38e0f3d1-2827-409c-96f6-f7f810f9ad65
+
+	/// Healthy pipeline / remaining target. The coverage figure to trust when much of the pipeline is aged.
+	measure 'Healthy Pipeline Coverage (x)' = VAR Gap = [Revenue Gap to Target] RETURN IF ( ISBLANK ( Gap ) || Gap <= 0, BLANK (), DIVIDE ( [Healthy Pipeline], Gap ) )
+		formatString: 0.00"x"
+		displayFolder: 02 Pipeline
+		lineageTag: b3522a00-a80c-495e-bfcf-1d0f7929c566
+
+	/// Open pipeline with no expected close date.
+	measure 'Open Pipeline - No Close Date' = CALCULATE ( [Open Pipeline], Opportunities[MissingCloseDate] = TRUE () )
+		formatString: """AED ""#,0.0,,""M"""
+		displayFolder: 03 Forecast
+		lineageTag: 433b867b-d42a-40ee-8233-df2399a2b6c3
+
+	/// Open deals whose account has had no activity within [Stale Threshold Days] of the As-Of Date. Uses the activity's own account (Accounts[Last Activity Date]).
+	measure 'Stale Open Deals' = VAR AsOf = [As-Of Date] VAR Thr = [Stale Threshold Days] RETURN COUNTROWS ( FILTER ( CALCULATETABLE ( Opportunities, Opportunities[IsOpen] = TRUE () ), VAR LastAct = RELATED ( Accounts[Last Activity Date] ) RETURN ISBLANK ( LastAct ) || LastAct < AsOf - Thr ) )
+		formatString: #,0
+		displayFolder: 04 Sales Execution
+		lineageTag: a45b26c1-c89b-4c71-b330-bbbd90e2822f
+
+	measure 'Stale Open Pipeline' = VAR AsOf = [As-Of Date] VAR Thr = [Stale Threshold Days] RETURN SUMX ( FILTER ( CALCULATETABLE ( Opportunities, Opportunities[IsOpen] = TRUE () ), VAR LastAct = RELATED ( Accounts[Last Activity Date] ) RETURN ISBLANK ( LastAct ) || LastAct < AsOf - Thr ), Opportunities[EstimatedRevenue] )
+		formatString: """AED ""#,0.0,,""M"""
+		displayFolder: 04 Sales Execution
+		lineageTag: 51dd6097-a8e0-40f0-aaae-a827b570b984
+
+	measure 'Stale % of Open Deals' = DIVIDE ( [Stale Open Deals], [Open Deals] )
+		formatString: 0.0%
+		displayFolder: 04 Sales Execution
+		lineageTag: 3b88a808-9e88-42dd-a7e0-5e8476319c1d
+
+	/// For opportunity-level tables: days between the As-Of Date and the last activity on the deal's account. Lookup on the account because the opportunity filter does not flow up to Accounts.
+	measure 'Days Since Last Activity' = VAR Acct = SELECTEDVALUE ( Opportunities[AccountID] ) VAR LastAct = LOOKUPVALUE ( Accounts[Last Activity Date], Accounts[AccountID], Acct ) RETURN IF ( ISBLANK ( Acct ) || ISBLANK ( LastAct ), BLANK (), DATEDIFF ( LastAct, [As-Of Date], DAY ) )
+		formatString: 0
+		displayFolder: 04 Sales Execution
+		lineageTag: 17e10134-6c8f-473e-a506-7e2ad1d8c48e
+
+	/// Number of logged activities. Rep, account and date context use the ACTIVITY's own SalesRepID / AccountID / ActivityDate (direct relationships).
+	measure Activities = COUNTROWS ( Activities )
+		formatString: #,0
+		displayFolder: 04 Sales Execution
+		lineageTag: 846d8e0a-f50d-4643-a78d-fcea48abf213
+
+	measure 'Completed Activities' = CALCULATE ( COUNTROWS ( Activities ), Activities[Outcome] = "Completed" )
+		formatString: #,0
+		displayFolder: 04 Sales Execution
+		lineageTag: d4131021-6fa3-4568-8030-15c2887f85fd
+
+	measure 'Activity Completion Rate %' = DIVIDE ( [Completed Activities], [Activities] )
+		formatString: 0.0%
+		displayFolder: 04 Sales Execution
+		lineageTag: ac2f4d97-be27-4090-b66f-57f5b90a89a5
+
+	measure 'No-Response Rate %' = DIVIDE ( CALCULATE ( COUNTROWS ( Activities ), Activities[Outcome] = "No Response" ), [Activities] )
+		formatString: 0.0%
+		displayFolder: 04 Sales Execution
+		lineageTag: b7c7d91f-3489-467f-ae55-0bca89dd42d0
+
+	measure 'Activity Hours' = DIVIDE ( SUM ( Activities[DurationMinutes] ), 60 )
+		formatString: #,0.0
+		displayFolder: 04 Sales Execution
+		lineageTag: 9d18ba8b-8493-4211-b8ed-2809bef1286c
+
+	/// Reps with at least one activity in the current selection.
+	measure 'Active Reps' = DISTINCTCOUNT ( Activities[SalesRepID] )
+		formatString: #,0
+		displayFolder: 04 Sales Execution
+		lineageTag: 0663484a-8e03-4db2-a212-1956e83808ea
+
+	/// Months in the selection that contain at least one activity.
+	measure 'Active Months' = COUNTROWS ( FILTER ( VALUES ( 'Date'[YearMonth] ), [Activities] > 0 ) )
+		formatString: #,0
+		displayFolder: 04 Sales Execution
+		lineageTag: 36905e66-35cb-466b-8b45-e182ece985d0
+
+	measure 'Activities per Rep' = DIVIDE ( [Activities], [Active Reps] )
+		formatString: #,0.0
+		displayFolder: 04 Sales Execution
+		lineageTag: ee01bba1-8da8-4ab2-ad93-08f6f707b549
+
+	/// Activity productivity normalised for team size and period length. Use to compare teams.
+	measure 'Activities per Rep per Month' = DIVIDE ( [Activities], [Active Reps] * [Active Months] )
+		formatString: #,0.0
+		displayFolder: 04 Sales Execution
+		lineageTag: 8d736a68-16e9-4fa0-bf7b-29c25ef52d55
+
+	/// Activity per rep-month vs the all-team average in the same period. Negative = below average. Use to flag teams with insufficient activity.
+	measure 'Activity vs Company Avg %' = VAR Mine = [Activities per Rep per Month] VAR CompanyAvg = CALCULATE ( [Activities per Rep per Month], ALL ( SalesReps ) ) RETURN IF ( ISBLANK ( Mine ), BLANK (), DIVIDE ( Mine, CompanyAvg ) - 1 )
+		formatString: +0.0%;-0.0%;0.0%
+		displayFolder: 04 Sales Execution
+		lineageTag: 6d24ed79-fa22-450e-aa01-074c234dfef9
+
+	/// Activity-to-outcome yield: Closed Won deals per 100 completed activities. Falling yield = activity is not translating into wins. Rep/account context: activities by the activity's own rep/account; deals by the opportunity's owner/account.
+	measure 'Won Deals per 100 Activities' = DIVIDE ( [Won Deals], [Completed Activities] ) * 100
+		formatString: 0.00
+		displayFolder: 04 Sales Execution
+		lineageTag: 8aa19824-7249-48a9-99c9-4ea6f95d255d
+
+	measure 'Won Revenue per Completed Activity' = DIVIDE ( [Won Revenue], [Completed Activities] )
+		formatString: "AED "#,0
+		displayFolder: 04 Sales Execution
+		lineageTag: bfbef31c-89ad-452e-9676-88ace39f601a
+
+	measure 'Total Opportunity Records' = COUNTROWS ( Opportunities )
+		formatString: #,0
+		displayFolder: 05 Data Quality
+		lineageTag: 0f83c3a4-2c62-4ff2-872d-d4c101495893
+
+	/// Opportunities with no owner (SalesRepID empty in the CRM export).
+	measure 'Missing Owner Deals' = CALCULATE ( COUNTROWS ( Opportunities ), Opportunities[MissingOwner] = TRUE () )
+		formatString: #,0
+		displayFolder: 05 Data Quality
+		lineageTag: b5b7896c-9b27-408d-b8ee-2ddd7a24db17
+
+	/// Opportunities with no expected close date (all stages).
+	measure 'Missing Close Date Deals' = CALCULATE ( COUNTROWS ( Opportunities ), Opportunities[MissingCloseDate] = TRUE () )
+		formatString: #,0
+		displayFolder: 05 Data Quality
+		lineageTag: e861ab65-561f-4f7e-ab07-709f23a803e2
+
+	/// Distinct OpportunityIDs shared by more than one record (ID collisions).
+	measure 'Duplicate Opportunity IDs' = CALCULATE ( DISTINCTCOUNT ( Opportunities[OpportunityID] ), Opportunities[IsDuplicateID] = TRUE () )
+		formatString: #,0
+		displayFolder: 05 Data Quality
+		lineageTag: 6222b923-2d0a-480c-88b5-1656fa597156
+
+	/// Total records involved in an ID collision (both copies).
+	measure 'Records Sharing an ID' = CALCULATE ( COUNTROWS ( Opportunities ), Opportunities[IsDuplicateID] = TRUE () )
+		formatString: #,0
+		displayFolder: 05 Data Quality
+		lineageTag: 2089c09d-7f86-4b77-a78d-e9f703bbec4b
+
+	measure 'Zero Value Deals' = CALCULATE ( COUNTROWS ( Opportunities ), Opportunities[ZeroValue] = TRUE () )
+		formatString: #,0
+		displayFolder: 05 Data Quality
+		lineageTag: f217a859-35cb-4bae-9d8a-71b0073ba1d4
+
+	measure 'Unknown Stage Deals' = CALCULATE ( COUNTROWS ( Opportunities ), Opportunities[UnknownStage] = TRUE () )
+		formatString: #,0
+		displayFolder: 05 Data Quality
+		lineageTag: ea223edc-9fcd-4060-8de0-8c63910255fb
+
+	/// Distinct opportunity records with at least one data-quality flag (owner, close date, zero value, ID collision, unknown stage). Not a sum of the individual counts, so overlaps are not double-counted.
+	measure 'Deals With Any Issue' = COUNTROWS ( FILTER ( Opportunities, Opportunities[MissingOwner] || Opportunities[MissingCloseDate] || Opportunities[ZeroValue] || Opportunities[IsDuplicateID] || Opportunities[UnknownStage] ) )
+		formatString: #,0
+		displayFolder: 05 Data Quality
+		lineageTag: 40e9c327-2184-45e6-91b5-8d8be8b80a0e
+
+	/// 1 - (records with any issue / total records).
+	measure 'Data Quality Score %' = 1 - DIVIDE ( [Deals With Any Issue], [Total Opportunity Records] )
+		formatString: 0.0%
+		displayFolder: 05 Data Quality
+		lineageTag: 8d1efbde-4086-449b-a40e-ba826d1a6801
+
+	measure 'Pipeline With No Owner' = CALCULATE ( [Open Pipeline], Opportunities[MissingOwner] = TRUE () )
+		formatString: """AED ""#,0.0,,""M"""
+		displayFolder: 05 Data Quality
+		lineageTag: 1befc898-686e-4426-b0f6-e3119d186122
+
+	/// EstimatedRevenue on the later copy of each colliding ID. This revenue is INCLUDED in all KPIs; this measure sizes the exposure if those records were excluded.
+	measure 'Revenue on Duplicate-ID Records' = CALCULATE ( SUM ( Opportunities[EstimatedRevenue] ), Opportunities[IsDuplicateRecord] = TRUE () )
+		formatString: """AED ""#,0.0,,""M"""
+		displayFolder: 05 Data Quality
+		lineageTag: 36ee5e40-d48e-498d-8f39-d54ca5a73bfd
+
+	/// Won revenue sitting on the later copy of a colliding ID.
+	measure 'Won Revenue on Duplicate-ID Records' = CALCULATE ( [Won Revenue], Opportunities[IsDuplicateRecord] = TRUE () )
+		formatString: """AED ""#,0.0,,""M"""
+		displayFolder: 05 Data Quality
+		lineageTag: 342b32a6-fa86-4b52-b115-861a0afd2301
+
+	/// Open deals whose expected close date equals the As-Of Date. About 100x a normal day, which suggests expected close dates were capped at the extract date.
+	measure 'Open Deals Dated On As-Of Date' = VAR AsOf = [As-Of Date] RETURN CALCULATE ( COUNTROWS ( Opportunities ), Opportunities[IsOpen] = TRUE (), Opportunities[ExpectedCloseDate] = AsOf )
+		formatString: #,0
+		displayFolder: 05 Data Quality
+		lineageTag: ce9d1569-acfb-463d-9359-64001606654d
+
+	/// Won revenue by product, using each opportunity's REAL revenue split pro-rata across its product lines (OpportunityProducts[Allocated Revenue]). Reconciles to [Won Revenue] except for won deals with no product line.
+	measure 'Won Revenue by Product' = CALCULATE ( SUM ( OpportunityProducts[Allocated Revenue] ), Opportunities[IsWon] = TRUE () )
+		formatString: """AED ""#,0.0,,""M"""
+		displayFolder: 06 Report Layer\Product
+		lineageTag: 6642559e-f709-4736-836d-93791ca225ee
+
+	measure 'Won Revenue by Product PY' = VAR Cutoff = [PY Cutoff Date] RETURN CALCULATE ( [Won Revenue by Product], SAMEPERIODLASTYEAR ( 'Date'[Date] ), KEEPFILTERS ( 'Date'[Date] <= Cutoff ) )
+		formatString: """AED ""#,0.0,,""M"""
+		displayFolder: 06 Report Layer\Product
+		lineageTag: 11a49cce-5714-4aa1-9e2b-144994b2369a
+
+	/// Growth vs prior year. BLANK unless a date filter is applied (an unfiltered 3-year window has no like-for-like prior period).
+	measure 'Product Growth %' = IF ( [Prior Year Comparison Applies], DIVIDE ( [Won Revenue by Product] - [Won Revenue by Product PY], [Won Revenue by Product PY] ), BLANK () )
+		formatString: 0.0%;-0.0%
+		displayFolder: 06 Report Layer\Product
+		lineageTag: 640fdd0e-546b-4c16-882a-676aa2546334
+
+	measure 'Product Mix %' = DIVIDE ( [Won Revenue by Product], CALCULATE ( [Won Revenue by Product], ALLSELECTED ( Products ) ) )
+		formatString: 0.0%
+		displayFolder: 06 Report Layer\Product
+		lineageTag: d54d36bb-a93b-4d35-8b98-e03dba1b116e
+
+	/// Won revenue on deals that have no product line (the later-copy duplicate-ID records). Footnote for the product visual.
+	measure 'Won Revenue Not Allocated to Products' = CALCULATE ( [Won Revenue], FILTER ( Opportunities, ISEMPTY ( RELATEDTABLE ( OpportunityProducts ) ) ) )
+		formatString: """AED ""#,0.0,,""M"""
+		displayFolder: 06 Report Layer\Product
+		lineageTag: 1443c127-944e-4355-ad5e-60f293b9dbbd
+
+	measure 'Win Rate % PY' = VAR Cutoff = [PY Cutoff Date] RETURN CALCULATE ( [Win Rate %], SAMEPERIODLASTYEAR ( 'Date'[Date] ), KEEPFILTERS ( 'Date'[Date] <= Cutoff ) )
+		formatString: 0.0%
+		displayFolder: 06 Report Layer\KPI Deltas
+		lineageTag: 6e1c1ffb-d48e-4b98-a28c-94591397385a
+
+	/// Win rate change vs prior year, in percentage points.
+	measure 'Win Rate Change (pts)' = IF ( ISBLANK ( [Win Rate % PY] ), BLANK (), ( [Win Rate %] - [Win Rate % PY] ) * 100 )
+		formatString: +0.0" pts";-0.0" pts";0.0" pts"
+		displayFolder: 06 Report Layer\KPI Deltas
+		lineageTag: c5b721de-1591-4b12-b9f4-5f1a84d0f7bf
+
+	measure 'Avg Sales Cycle PY' = VAR Cutoff = [PY Cutoff Date] RETURN CALCULATE ( [Avg Sales Cycle (Days)], SAMEPERIODLASTYEAR ( 'Date'[Date] ), KEEPFILTERS ( 'Date'[Date] <= Cutoff ) )
+		formatString: 0.0
+		displayFolder: 06 Report Layer\KPI Deltas
+		lineageTag: 71b3c9e6-e904-4758-b5d8-593dbe07f35c
+
+	measure 'Avg Sales Cycle Change %' = DIVIDE ( [Avg Sales Cycle (Days)] - [Avg Sales Cycle PY], [Avg Sales Cycle PY] )
+		formatString: +0.0%;-0.0%;0.0%
+		displayFolder: 06 Report Layer\KPI Deltas
+		lineageTag: a8a1e255-f77b-45ad-a17d-de773b739089
+
+	/// Distinct accounts with at least one Closed Won deal in the selection.
+	measure 'Won Customers' = CALCULATE ( DISTINCTCOUNT ( Opportunities[AccountID] ), Opportunities[IsWon] = TRUE () )
+		formatString: #,0
+		displayFolder: 06 Report Layer\KPI Deltas
+		lineageTag: 7aed78d1-78d0-4e43-80ba-5952d7d89c99
+
+	/// TRUE when a date filter is applied. Prior-year comparisons are only meaningful then (the unfiltered 3-year window has no like-for-like prior period).
+	measure 'Prior Year Comparison Applies' = ISFILTERED ( 'Date'[Year] ) || ISFILTERED ( 'Date'[Month] ) || ISFILTERED ( 'Date'[YearMonth] ) || ISFILTERED ( 'Date'[Date] ) || ISFILTERED ( 'Date'[Quarter] )
+		displayFolder: 06 Report Layer\KPI Deltas
+		lineageTag: 9006255b-5b03-4207-becc-23fe11e6e677
+
+	/// Funnel bar value: open pipeline for open stages, won revenue for Closed Won.
+	measure 'Funnel Value' = [Open Pipeline] + [Won Revenue]
+		formatString: """AED ""#,0.0,,""M"""
+		displayFolder: 06 Report Layer\Pipeline
+		lineageTag: 2e7f47c2-c016-48ef-972c-972cd3eb7343
+
+	/// Count for the selected row of the 'DQ Checks' table. The last two checks are date-integrity warnings (suspected extract-date artefacts).
+	measure 'DQ Issue Count' = SWITCH ( SELECTEDVALUE ( 'DQ Checks'[Check] ), "Duplicate opportunity IDs", [Duplicate Opportunity IDs], "Missing sales owner", [Missing Owner Deals], "Missing close date", [Missing Close Date Deals], "Unknown stage", [Unknown Stage Deals], "Zero-value opportunities", [Zero Value Deals], "Closed on extract date (suspect)", [Deals Closed On As-Of Date], "Expected close = extract date (suspect)", [Open Deals Dated On As-Of Date], BLANK () )
+		formatString: #,0
+		displayFolder: 06 Report Layer\Data Quality
+		lineageTag: b294af3a-9f59-41a2-9ef8-a8e11b67c09b
+
+	measure 'DQ Issue % of Records' = DIVIDE ( [DQ Issue Count], [Total Opportunity Records] )
+		formatString: 0.0%
+		displayFolder: 06 Report Layer\Data Quality
+		lineageTag: 576e729c-2c8a-4f3a-b654-1c82259d06ff
+
+	/// As-Of Date minus 12 months. Prior-year measures are cut off here so a part-year (data ends 30 Sep 2026) is compared with the SAME months of the prior year, not the full year.
+	measure 'PY Cutoff Date' = EDATE ( [As-Of Date], -12 )
+		formatString: dd mmm yyyy
+		displayFolder: 00 Config
+		lineageTag: 4382a4df-d685-41e4-8042-affca4bb2d6b
+
+	measure 'Label - Won Revenue YoY' = IF ( ISBLANK ( [Won Revenue YoY % (Display)] ), "n/a", IF ( [Won Revenue YoY % (Display)] >= 0, "▲ ", "▼ " ) & FORMAT ( ABS ( [Won Revenue YoY % (Display)] ), "0.0%" ) & " " & [Chip Basis] )
+		displayFolder: 06 Report Layer\KPI Labels
+		lineageTag: 431ef968-217f-416b-b31e-ab2a0e98b9fb
+
+	measure 'Label - Win Rate Change' = IF ( ISBLANK ( [Win Rate Change (Display)] ), "n/a", IF ( [Win Rate Change (Display)] >= 0, "▲ ", "▼ " ) & FORMAT ( ABS ( [Win Rate Change (Display)] ), "0.0" ) & " pts " & [Chip Basis] )
+		displayFolder: 06 Report Layer\KPI Labels
+		lineageTag: 895c5f7a-e611-463e-8930-5871ea4a4b67
+
+	measure 'Label - Sales Cycle Change' = IF ( ISBLANK ( [Sales Cycle Change % (Display)] ), "n/a", IF ( [Sales Cycle Change % (Display)] >= 0, "▲ ", "▼ " ) & FORMAT ( ABS ( [Sales Cycle Change % (Display)] ), "0.0%" ) & " " & [Chip Basis] )
+		displayFolder: 06 Report Layer\KPI Labels
+		lineageTag: 088bd3cb-92c1-487c-a90d-320173ce4760
+
+	measure 'Sub - Won Revenue' = FORMAT ( [Won Deals], "#,0" ) & " deals | " & FORMAT ( [Won Customers], "#,0" ) & " customers"
+		displayFolder: 06 Report Layer\KPI Labels
+		lineageTag: 03143eb9-450a-49d8-830b-59b396e97dde
+
+	measure 'Sub - Target Attainment' = IF ( ISBLANK ( [Revenue Target] ), "target not set at this level", "of AED " & FORMAT ( [Revenue Target] / 1000000, "#,0.0" ) & "M target" )
+		displayFolder: 06 Report Layer\KPI Labels
+		lineageTag: fdf161a7-cb41-4753-8896-36d291148b24
+
+	measure 'Sub - Open Pipeline' = FORMAT ( [Open Deals], "#,0" ) & " deals | AED " & FORMAT ( [Weighted Pipeline] / 1000000, "#,0.0" ) & "M weighted"
+		displayFolder: 06 Report Layer\KPI Labels
+		lineageTag: 8e98056e-b834-41b5-b467-997e3292b539
+
+	measure 'Sub - At-Risk' = FORMAT ( [At-Risk Deals], "#,0" ) & " deals | AED " & FORMAT ( [At-Risk Pipeline] / 1000000, "#,0.0" ) & "M"
+		displayFolder: 06 Report Layer\KPI Labels
+		lineageTag: 43af1a25-89e8-4d3d-93f0-06d53068e036
+
+	measure 'Sub - Win Rate' = FORMAT ( [Won Deals], "#,0" ) & " won / " & FORMAT ( [Closed Deals], "#,0" ) & " closed"
+		displayFolder: 06 Report Layer\KPI Labels
+		lineageTag: 6043741a-c107-4eac-bb69-c797cce8dee8
+
+	measure 'Sub - Coverage' = IF ( ISBLANK ( [Pipeline Coverage (x)] ), "n/a", "vs " & FORMAT ( [Pipeline Coverage (x)], "0.00" ) & "x unadjusted" )
+		displayFolder: 06 Report Layer\KPI Labels
+		lineageTag: f0b34be6-d8a2-4f6e-afb6-341325b504a5
+
+	/// Hex colour for conditional formatting (Format > Font colour > Field value). Green >= 0, red < 0, grey if no comparison.
+	measure 'Color - Won Revenue YoY' = IF ( ISBLANK ( [Won Revenue YoY % (Display)] ), "#718198", IF ( [Won Revenue YoY % (Display)] >= 0, "#159570", "#D96B83" ) )
+		displayFolder: 06 Report Layer\KPI Colors
+		lineageTag: 25d0c0b3-0b02-4411-8250-ee5f3685fa6f
+
+	/// Green >= 100%, amber >= 75%, red below.
+	measure 'Color - Attainment' = IF ( ISBLANK ( [Target Attainment %] ), "#718198", IF ( [Target Attainment %] >= 1, "#159570", IF ( [Target Attainment %] >= 0.75, "#F09A45", "#D96B83" ) ) )
+		displayFolder: 06 Report Layer\KPI Colors
+		lineageTag: 875f71b9-e1e1-4bdc-b1c2-ad07424f6f6f
+
+	/// Green <= 25% at risk, amber <= 50%, red above.
+	measure 'Color - At-Risk' = IF ( ISBLANK ( [At-Risk % of Open Pipeline] ), "#718198", IF ( [At-Risk % of Open Pipeline] <= 0.25, "#159570", IF ( [At-Risk % of Open Pipeline] <= 0.5, "#F09A45", "#D96B83" ) ) )
+		displayFolder: 06 Report Layer\KPI Colors
+		lineageTag: a613d852-4c85-4d4e-ad38-28437132d9a4
+
+	/// Healthy coverage: green >= 3x, amber >= 1.5x, red below.
+	measure 'Color - Coverage' = IF ( ISBLANK ( [Healthy Pipeline Coverage (x)] ), "#718198", IF ( [Healthy Pipeline Coverage (x)] >= 3, "#159570", IF ( [Healthy Pipeline Coverage (x)] >= 1.5, "#F09A45", "#D96B83" ) ) )
+		displayFolder: 06 Report Layer\KPI Colors
+		lineageTag: d77a9917-6982-4653-9005-63ecd6c66fad
+
+	measure 'Color - Win Rate Change' = IF ( ISBLANK ( [Win Rate Change (Display)] ), "#718198", IF ( [Win Rate Change (Display)] >= 0, "#159570", "#D96B83" ) )
+		displayFolder: 06 Report Layer\KPI Colors
+		lineageTag: 836fcfd1-eee8-466d-9b96-cfea41ee29a5
+
+	/// Shorter sales cycle is GOOD: green when the cycle fell, red when it lengthened.
+	measure 'Color - Sales Cycle Change' = IF ( ISBLANK ( [Sales Cycle Change % (Display)] ), "#718198", IF ( [Sales Cycle Change % (Display)] <= 0, "#159570", "#D96B83" ) )
+		displayFolder: 06 Report Layer\KPI Colors
+		lineageTag: 42b10ac3-3536-4147-8da1-847a810ae2f3
+
+	measure 'Insight 1 - Headline' = IF ( [Prior Year Comparison Applies] && NOT ISBLANK ( [Won Revenue YoY %] ), "Won revenue " & IF ( [Won Revenue YoY %] >= 0, "up ", "down " ) & FORMAT ( ABS ( [Won Revenue YoY %] ), "0.0%" ) & " vs prior year", "Won revenue: AED " & FORMAT ( [Won Revenue] / 1000000, "#,0.0" ) & "M" )
+		displayFolder: 06 Report Layer\Insights
+		lineageTag: a54a9f4d-bfa5-4b0b-aba1-922b12c47e4d
+
+	measure 'Insight 1 - Detail' = "Won AED " & FORMAT ( [Won Revenue] / 1000000, "#,0.0" ) & "M" & IF ( ISBLANK ( [Revenue Target] ), ".", " against an AED " & FORMAT ( [Revenue Target] / 1000000, "#,0.0" ) & "M target (" & FORMAT ( [Target Attainment %], "0.0%" ) & " attainment)." )
+		displayFolder: 06 Report Layer\Insights
+		lineageTag: 5494756e-ee8a-4384-9a34-33895fdb7e03
+
+	measure 'Insight 2 - Headline' = FORMAT ( [At-Risk % of Open Pipeline], "0%" ) & " of open pipeline is at risk"
+		displayFolder: 06 Report Layer\Insights
+		lineageTag: 93928c75-34f8-4580-ae9e-b23fa2992ff1
+
+	measure 'Insight 2 - Detail' = "Only AED " & FORMAT ( [Healthy Pipeline] / 1000000, "#,0.0" ) & "M of AED " & FORMAT ( [Open Pipeline] / 1000000, "#,0.0" ) & "M is dated, current and active." & IF ( ISBLANK ( [Healthy Pipeline Coverage (x)] ), "", " Healthy coverage " & FORMAT ( [Healthy Pipeline Coverage (x)], "0.00" ) & "x." )
+		displayFolder: 06 Report Layer\Insights
+		lineageTag: f6a5e775-dac7-4086-b349-da9b9feff858
+
+	measure 'Insight 3 - Headline' = VAR TopIndustry = TOPN ( 1, ALLSELECTED ( Accounts[Industry] ), [Won Revenue], DESC ) VAR IndustryName = MAXX ( TopIndustry, Accounts[Industry] ) RETURN IF ( ISBLANK ( IndustryName ), "No industry data", IndustryName & " leads industry revenue" )
+		displayFolder: 06 Report Layer\Insights
+		lineageTag: 129a9836-ce5a-4701-a9f7-4a71f4f7dc78
+
+	measure 'Insight 3 - Detail' = VAR TopIndustry = TOPN ( 1, ALLSELECTED ( Accounts[Industry] ), [Won Revenue], DESC ) VAR IndustryRevenue = MAXX ( TopIndustry, [Won Revenue] ) VAR AllRevenue = CALCULATE ( [Won Revenue], ALLSELECTED ( Accounts[Industry] ) ) RETURN FORMAT ( DIVIDE ( IndustryRevenue, AllRevenue ), "0.0%" ) & " of won revenue (AED " & FORMAT ( IndustryRevenue / 1000000, "#,0.0" ) & "M)."
+		displayFolder: 06 Report Layer\Insights
+		lineageTag: 59ea3ec9-702c-4a9e-89ae-a1f490498328
+
+	measure 'Insight 4 - Headline' = FORMAT ( [Stale Open Deals], "#,0" ) & " open deals have gone stale"
+		displayFolder: 06 Report Layer\Insights
+		lineageTag: 526d9216-e7a0-43ac-ad88-68149840cf15
+
+	measure 'Insight 4 - Detail' = "No activity on the account in " & [Stale Threshold Days] & "+ days, covering AED " & FORMAT ( [Stale Open Pipeline] / 1000000, "#,0.0" ) & "M of pipeline."
+		displayFolder: 06 Report Layer\Insights
+		lineageTag: f9ce16a7-7d4d-4789-9f7f-0d9b3e56cee1
+
+	/// Won revenue YoY for the chip. If a period is selected: that period vs the same period last year. If not: latest year-to-date (as-of date) vs the same months last year, ignoring the Date slicer.
+	measure 'Won Revenue YoY % (Display)' = VAR AsOf = [As-Of Date] VAR YearStart = DATE ( YEAR ( AsOf ), 1, 1 ) VAR Cur = CALCULATE ( [Won Revenue], REMOVEFILTERS ( 'Date' ), 'Date'[Date] >= YearStart, 'Date'[Date] <= AsOf ) VAR Prior = CALCULATE ( [Won Revenue], REMOVEFILTERS ( 'Date' ), 'Date'[Date] >= EDATE ( YearStart, -12 ), 'Date'[Date] <= EDATE ( AsOf, -12 ) ) RETURN IF ( [Prior Year Comparison Applies], [Won Revenue YoY %], DIVIDE ( Cur - Prior, Prior ) )
+		formatString: +0.0%;-0.0%;0.0%
+		displayFolder: 06 Report Layer\KPI Labels
+		lineageTag: 499b0c4c-5ffd-4b90-9f1a-e37f9d23fd5e
+
+	/// Win rate change in points for the chip (selected period, else latest YTD vs same months last year).
+	measure 'Win Rate Change (Display)' = VAR AsOf = [As-Of Date] VAR YearStart = DATE ( YEAR ( AsOf ), 1, 1 ) VAR Cur = CALCULATE ( [Win Rate %], REMOVEFILTERS ( 'Date' ), 'Date'[Date] >= YearStart, 'Date'[Date] <= AsOf ) VAR Prior = CALCULATE ( [Win Rate %], REMOVEFILTERS ( 'Date' ), 'Date'[Date] >= EDATE ( YearStart, -12 ), 'Date'[Date] <= EDATE ( AsOf, -12 ) ) RETURN IF ( [Prior Year Comparison Applies], [Win Rate Change (pts)], IF ( ISBLANK ( Prior ), BLANK (), ( Cur - Prior ) * 100 ) )
+		formatString: +0.0" pts";-0.0" pts";0.0" pts"
+		displayFolder: 06 Report Layer\KPI Labels
+		lineageTag: 1715ec20-239c-4497-ad57-fb1f18ee0d0f
+
+	/// Sales-cycle change % for the chip (selected period, else latest YTD vs same months last year).
+	measure 'Sales Cycle Change % (Display)' = VAR AsOf = [As-Of Date] VAR YearStart = DATE ( YEAR ( AsOf ), 1, 1 ) VAR Cur = CALCULATE ( [Avg Sales Cycle (Days)], REMOVEFILTERS ( 'Date' ), 'Date'[Date] >= YearStart, 'Date'[Date] <= AsOf ) VAR Prior = CALCULATE ( [Avg Sales Cycle (Days)], REMOVEFILTERS ( 'Date' ), 'Date'[Date] >= EDATE ( YearStart, -12 ), 'Date'[Date] <= EDATE ( AsOf, -12 ) ) RETURN IF ( [Prior Year Comparison Applies], [Avg Sales Cycle Change %], DIVIDE ( Cur - Prior, Prior ) )
+		formatString: +0.0%;-0.0%;0.0%
+		displayFolder: 06 Report Layer\KPI Labels
+		lineageTag: 998e4491-b145-4cf8-8345-e8b24c8d5d00
+
+	/// Product revenue growth for the table (selected period, else latest YTD vs same months last year).
+	measure 'Product Growth % (Display)' = VAR AsOf = [As-Of Date] VAR YearStart = DATE ( YEAR ( AsOf ), 1, 1 ) VAR Cur = CALCULATE ( [Won Revenue by Product], REMOVEFILTERS ( 'Date' ), 'Date'[Date] >= YearStart, 'Date'[Date] <= AsOf ) VAR Prior = CALCULATE ( [Won Revenue by Product], REMOVEFILTERS ( 'Date' ), 'Date'[Date] >= EDATE ( YearStart, -12 ), 'Date'[Date] <= EDATE ( AsOf, -12 ) ) RETURN IF ( [Prior Year Comparison Applies], [Product Growth %], DIVIDE ( Cur - Prior, Prior ) )
+		formatString: +0.0%;-0.0%;0.0%
+		displayFolder: 06 Report Layer\Product
+		lineageTag: 05c0db65-e4cb-418b-a681-e1396aa3f021
+
+	/// Text shown after the chip value: 'vs PY' when a period is selected, otherwise '<year> YTD vs PY'.
+	measure 'Chip Basis' = IF ( [Prior Year Comparison Applies], "vs PY", YEAR ( [As-Of Date] ) & " YTD vs PY" )
+		displayFolder: 06 Report Layer\KPI Labels
+		lineageTag: 466457c6-e403-4b91-80ca-89dc476d9759
+
+	/// Deals (won + lost) whose actual close date equals the As-Of Date. Suspect: about 130x a normal day, which indicates close dates were set to the extract date.
+	measure 'Deals Closed On As-Of Date' = VAR AsOf = [As-Of Date] RETURN CALCULATE ( [Closed Deals], KEEPFILTERS ( 'Date'[Date] = AsOf ) )
+		formatString: #,0
+		displayFolder: 05 Data Quality
+		lineageTag: a4ece833-3614-4b48-88af-ff2d8d85900d
+
+	measure 'Won Revenue Closed On As-Of Date' = VAR AsOf = [As-Of Date] RETURN CALCULATE ( [Won Revenue], KEEPFILTERS ( 'Date'[Date] = AsOf ) )
+		formatString: """AED ""#,0.0,,""M"""
+		displayFolder: 05 Data Quality
+		lineageTag: 4027afec-6f77-488d-98b3-e8e7f0981436
+
+	/// Won revenue excluding deals closed on the As-Of Date (suspected extract-date artefact). The reported [Won Revenue] still reconciles to the CRM; use this to judge underlying trend.
+	measure 'Won Revenue (Adj.)' = [Won Revenue] - COALESCE ( [Won Revenue Closed On As-Of Date], 0 )
+		formatString: """AED ""#,0.0,,""M"""
+		displayFolder: 06 Report Layer\Adjusted
+		lineageTag: 39553d9f-cfe2-4f32-8aac-521f4a3d0c81
+
+	/// Like-for-like YoY with the As-Of-Date close spike removed from the current period. Selected period if one is applied, otherwise latest YTD vs the same months last year.
+	measure 'Won Revenue YoY % (Adj.)' = VAR AsOf = [As-Of Date] VAR YearStart = DATE ( YEAR ( AsOf ), 1, 1 ) VAR Cur = CALCULATE ( [Won Revenue (Adj.)], REMOVEFILTERS ( 'Date' ), 'Date'[Date] >= YearStart, 'Date'[Date] <= AsOf ) VAR Prior = CALCULATE ( [Won Revenue], REMOVEFILTERS ( 'Date' ), 'Date'[Date] >= EDATE ( YearStart, -12 ), 'Date'[Date] <= EDATE ( AsOf, -12 ) ) RETURN IF ( [Prior Year Comparison Applies], DIVIDE ( [Won Revenue (Adj.)] - [Won Revenue PY], [Won Revenue PY] ), DIVIDE ( Cur - Prior, Prior ) )
+		formatString: +0.0%;-0.0%;0.0%
+		displayFolder: 06 Report Layer\Adjusted
+		lineageTag: 23453aa8-b47c-4667-8588-94487d89b576
+
+	measure 'Label - Won Revenue YoY (Adj.)' = IF ( ISBLANK ( [Won Revenue YoY % (Adj.)] ), "n/a", "excl. " & FORMAT ( [As-Of Date], "d mmm" ) & " spike: " & IF ( [Won Revenue YoY % (Adj.)] >= 0, "▲ ", "▼ " ) & FORMAT ( ABS ( [Won Revenue YoY % (Adj.)] ), "0.0%" ) )
+		displayFolder: 06 Report Layer\Adjusted
+		lineageTag: 64a39729-43cd-4d0e-bec5-568e69de2418
+
+	/// Plain-language warning for the dashboard footnote.
+	measure 'Close Date Spike Note' = VAR AsOf = [As-Of Date] VAR SpikeDeals = CALCULATE ( [Closed Deals], REMOVEFILTERS ( 'Date' ), 'Date'[Date] = AsOf ) VAR SpikeRevenue = CALCULATE ( [Won Revenue], REMOVEFILTERS ( 'Date' ), 'Date'[Date] = AsOf ) VAR OtherDeals = CALCULATE ( [Closed Deals], REMOVEFILTERS ( 'Date' ) ) - SpikeDeals VAR DaysBefore = DATEDIFF ( CALCULATE ( MIN ( 'Date'[Date] ), REMOVEFILTERS ( 'Date' ) ), AsOf, DAY ) RETURN FORMAT ( SpikeDeals, "#,0" ) & " deals (AED " & FORMAT ( SpikeRevenue / 1000000, "#,0.0" ) & "M won) are dated " & FORMAT ( AsOf, "d mmm yyyy" ) & ", about " & FORMAT ( DIVIDE ( SpikeDeals, DIVIDE ( OtherDeals, DaysBefore ) ), "#,0" ) & "x a normal day. Treat recent-period growth with caution."
+		displayFolder: 06 Report Layer\Adjusted
+		lineageTag: f8faef2f-1dca-4f4c-ba34-1bb41a9e0f52
+
+	/// Won revenue for the selected period; if no date filter is applied, latest year-to-date (to the As-Of Date).
+	measure 'P1 Won Revenue' =
+			VAR AsOf = [As-Of Date]
+			VAR YS = DATE ( YEAR ( AsOf ), 1, 1 )
+			RETURN
+			IF (
+			    [Prior Year Comparison Applies],
+			    [Won Revenue],
+			    CALCULATE ( [Won Revenue], REMOVEFILTERS ( 'Date' ), 'Date'[Date] >= YS, 'Date'[Date] <= AsOf )
+			)
+		formatString: 0.0
+		displayFolder: 07 Dashboard\P1 CRM Analytics\Scorecard
+		lineageTag: b331ec30-be5a-41ab-b995-ad0de92f2b97
+
+	/// Same period last year, like-for-like. Selected period if filtered, otherwise latest YTD vs same months of the prior year.
+	measure 'P1 Won Revenue PY' =
+			VAR AsOf = [As-Of Date]
+			VAR YS = DATE ( YEAR ( AsOf ), 1, 1 )
+			RETURN
+			IF (
+			    [Prior Year Comparison Applies],
+			    [Won Revenue PY],
+			    CALCULATE ( [Won Revenue], REMOVEFILTERS ( 'Date' ), 'Date'[Date] >= EDATE ( YS, -12 ), 'Date'[Date] <= EDATE ( AsOf, -12 ) )
+			)
+		formatString: """AED ""#,0.0,,""M"""
+		displayFolder: 07 Dashboard\P1 CRM Analytics\Scorecard
+		lineageTag: 1ce8b31e-7431-4fe1-adcc-fbadbdca0133
+
+	/// Target for the selected period; if no date filter, latest YTD target.
+	measure 'P1 Revenue Target' =
+			VAR AsOf = [As-Of Date]
+			VAR YS = DATE ( YEAR ( AsOf ), 1, 1 )
+			RETURN
+			IF (
+			    [Prior Year Comparison Applies],
+			    [Revenue Target],
+			    CALCULATE ( [Revenue Target], REMOVEFILTERS ( 'Date' ), 'Date'[Date] >= YS, 'Date'[Date] <= AsOf )
+			)
+		formatString: 0.00
+		displayFolder: 07 Dashboard\P1 CRM Analytics\Scorecard
+		lineageTag: 1f9a4c53-4f5f-4baa-8e9f-ae8270d67d25
+
+	/// Won revenue / target for the same period.
+	measure 'P1 Target Attainment %' = DIVIDE ( [P1 Won Revenue], [P1 Revenue Target] )
+		formatString: 0.0%
+		displayFolder: 07 Dashboard\P1 CRM Analytics\Scorecard
+		lineageTag: 0105215f-3ac4-4e32-b6b6-1930f02a6954
+
+	/// Target minus won revenue. Positive = still short of target; negative = target exceeded.
+	measure 'P1 Gap to Target' = [P1 Revenue Target] - [P1 Won Revenue]
+		formatString: """AED ""#,0.0,,""M"";-""AED ""#,0.0,,""M"""
+		displayFolder: 07 Dashboard\P1 CRM Analytics\Scorecard
+		lineageTag: 5d31095e-b2fb-43d9-a9c9-a2743d10c5e8
+
+	/// Win rate (won / won+lost) for the selected period, else latest YTD.
+	measure 'P1 Win Rate %' =
+			VAR AsOf = [As-Of Date]
+			VAR YS = DATE ( YEAR ( AsOf ), 1, 1 )
+			RETURN
+			IF (
+			    [Prior Year Comparison Applies],
+			    [Win Rate %],
+			    CALCULATE ( [Win Rate %], REMOVEFILTERS ( 'Date' ), 'Date'[Date] >= YS, 'Date'[Date] <= AsOf )
+			)
+		formatString: 0.0%
+		displayFolder: 07 Dashboard\P1 CRM Analytics\Scorecard
+		lineageTag: 76dc0a75-40ba-4352-b8cb-c0f86d4c73d2
+
+	/// Distinct customers with a won deal in the selected period, else latest YTD.
+	measure 'P1 Won Customers' =
+			VAR AsOf = [As-Of Date]
+			VAR YS = DATE ( YEAR ( AsOf ), 1, 1 )
+			RETURN
+			IF (
+			    [Prior Year Comparison Applies],
+			    [Won Customers],
+			    CALCULATE ( [Won Customers], REMOVEFILTERS ( 'Date' ), 'Date'[Date] >= YS, 'Date'[Date] <= AsOf )
+			)
+		formatString: #,0
+		displayFolder: 07 Dashboard\P1 CRM Analytics\Scorecard
+		lineageTag: 9257178d-76c0-4cd5-953f-930c6f113df1
+
+	/// Current open pipeline snapshot. Ignores the Date slicer: pipeline is a point-in-time view.
+	measure 'P1 Open Pipeline' = CALCULATE ( [Open Pipeline], REMOVEFILTERS ( 'Date' ) )
+		formatString: """AED ""#,0.0,,""M"""
+		displayFolder: 07 Dashboard\P1 CRM Analytics\Pipeline Health
+		lineageTag: 0340f432-a4c5-45da-be2b-4ac49d6275a6
+
+	/// Open pipeline that is dated, within grace period and on an account with recent activity. Snapshot.
+	measure 'P1 Healthy Pipeline' = CALCULATE ( [Healthy Pipeline], REMOVEFILTERS ( 'Date' ) )
+		formatString: """AED ""#,0.0,,""M"""
+		displayFolder: 07 Dashboard\P1 CRM Analytics\Pipeline Health
+		lineageTag: 4101cb95-7e11-437b-a5f4-b1c2dd177d12
+
+	/// Open pipeline with an expired date, no date, or a stale account. Snapshot.
+	measure 'P1 Pipeline at Risk' = CALCULATE ( [At-Risk Pipeline], REMOVEFILTERS ( 'Date' ) )
+		formatString: """AED ""#,0.0,,""M"""
+		displayFolder: 07 Dashboard\P1 CRM Analytics\Pipeline Health
+		lineageTag: 6df84339-bd52-404f-9010-27bdeddec2ec
+
+	/// Share of open pipeline that is healthy (not expired, not stale, dated). A decision KPI: how much of the pipeline can management actually rely on.
+	measure 'P1 Pipeline Health %' = DIVIDE ( [P1 Healthy Pipeline], [P1 Open Pipeline] )
+		formatString: 0.0%
+		displayFolder: 07 Dashboard\P1 CRM Analytics\Pipeline Health
+		lineageTag: 74c85ba8-3ad6-44a3-9281-201ddca9918c
+
+	/// Won revenue + probability-weighted open pipeline (optimistic), view-aware for won revenue.
+	measure 'P1 Optimistic Forecast' = [P1 Won Revenue] + CALCULATE ( [Weighted Pipeline], REMOVEFILTERS ( 'Date' ) )
+		formatString: """AED ""#,0.0,,""M"""
+		displayFolder: 07 Dashboard\P1 CRM Analytics\Forecast
+		lineageTag: a853113b-1281-4339-ac98-0cde78ca71d7
+
+	/// Won revenue + weighted HEALTHY pipeline (conservative).
+	measure 'P1 Realistic Forecast' = [P1 Won Revenue] + CALCULATE ( [Healthy Weighted Pipeline], REMOVEFILTERS ( 'Date' ) )
+		formatString: 0.0
+		displayFolder: 07 Dashboard\P1 CRM Analytics\Forecast
+		lineageTag: 9efacb60-ddc6-4d06-8a6e-8cd9e28e3f00
+
+	/// Realistic forecast as % of optimistic forecast: how much of the headline forecast is credible.
+	measure 'P1 Forecast Confidence %' = DIVIDE ( [P1 Realistic Forecast], [P1 Optimistic Forecast] )
+		formatString: 0.0%
+		displayFolder: 07 Dashboard\P1 CRM Analytics\Forecast
+		lineageTag: 48c93c07-26e2-48ea-9f29-1c4389427f7c
+
+	/// Realistic forecast vs target. Under 100% = target at risk even if healthy pipeline converts.
+	measure 'P1 Realistic Forecast vs Target %' = DIVIDE ( [P1 Realistic Forecast], [P1 Revenue Target] )
+		formatString: 0.0%;-0.0%;0.0%
+		displayFolder: 07 Dashboard\P1 CRM Analytics\Forecast
+		lineageTag: 84124158-1c1f-4fd5-b64e-6664f392a68f
+
+	/// Share of won revenue from the top 10 customers in the current selection. Concentration risk.
+	measure 'P1 Top 10 Customer Share %' =
+			VAR Total = [P1 Won Revenue]
+			VAR Top10 =
+			    SUMX ( TOPN ( 10, VALUES ( Accounts[AccountID] ), [P1 Won Revenue] ), [P1 Won Revenue] )
+			RETURN
+			DIVIDE ( Top10, Total )
+		formatString: 0.0%
+		displayFolder: 07 Dashboard\P1 CRM Analytics\Scorecard
+		lineageTag: 0c70c9d2-898f-4f02-bc1c-2a3e9e3479a7
+
+	/// Monthly trend series: won revenue same month last year.
+	measure 'P1 Won Revenue PY (Monthly)' = CALCULATE ( [Won Revenue], DATEADD ( 'Date'[Date], -12, MONTH ) )
+		formatString: """AED ""#,0.0,,""M"""
+		displayFolder: 07 Dashboard\P1 CRM Analytics\Trend
+		lineageTag: e8d9d6a0-d680-417f-9de9-586bf16a2e05
+
+	/// Monthly attainment vs target for the trend chart tooltip.
+	measure 'P1 Monthly Attainment %' = DIVIDE ( [Won Revenue], [Revenue Target] )
+		formatString: 0.0%
+		displayFolder: 07 Dashboard\P1 CRM Analytics\Trend
+		lineageTag: 2c01e9bf-a354-4c99-bb04-c48cd4e51a5f
+
+	/// Conditional-format hex: soft green when growing, soft red when declining, grey when no comparison. Uses the adjusted YoY.
+	measure 'P1 Color - YoY' =
+			VAR v = [Won Revenue YoY % (Adj.)]
+			RETURN SWITCH ( TRUE (), ISBLANK ( v ), "#9AA5B1", v > 0, "#4FA67A", v < 0, "#D9667A", "#9AA5B1" )
+		displayFolder: 07 Dashboard\P1 CRM Analytics\Colors
+		lineageTag: 4cbc7d49-7096-41cc-a9de-23e2867960f7
+
+	/// Green >= 100%, amber >= 75%, red below.
+	measure 'P1 Color - Attainment' =
+			VAR v = [P1 Target Attainment %]
+			RETURN SWITCH ( TRUE (), ISBLANK ( v ), "#9AA5B1", v >= 1, "#4FA67A", v >= 0.75, "#E0A03A", "#D9667A" )
+		displayFolder: 07 Dashboard\P1 CRM Analytics\Colors
+		lineageTag: 367ff039-6b58-4ab4-862e-44e062067fdf
+
+	/// Green >= 60% healthy, amber >= 35%, red below.
+	measure 'P1 Color - Pipeline Health' =
+			VAR v = [P1 Pipeline Health %]
+			RETURN SWITCH ( TRUE (), ISBLANK ( v ), "#9AA5B1", v >= 0.6, "#4FA67A", v >= 0.35, "#E0A03A", "#D9667A" )
+		displayFolder: 07 Dashboard\P1 CRM Analytics\Colors
+		lineageTag: 0b2093db-70dd-43c0-92ef-017f5a4ddd08
+
+	/// Green >= 100% of target, amber >= 75%, red below.
+	measure 'P1 Color - Forecast' =
+			VAR v = [P1 Realistic Forecast vs Target %]
+			RETURN SWITCH ( TRUE (), ISBLANK ( v ), "#9AA5B1", v >= 1, "#4FA67A", v >= 0.75, "#E0A03A", "#D9667A" )
+		displayFolder: 07 Dashboard\P1 CRM Analytics\Colors
+		lineageTag: 32b2f4bf-aa56-478c-88b0-f297e78c0693
+
+	/// Win-rate change in points vs prior year: green up, red down.
+	measure 'P1 Color - Win Rate' =
+			VAR v = [Win Rate Change (Display)]
+			RETURN SWITCH ( TRUE (), ISBLANK ( v ), "#9AA5B1", v > 0, "#4FA67A", v < 0, "#D9667A", "#9AA5B1" )
+		displayFolder: 07 Dashboard\P1 CRM Analytics\Colors
+		lineageTag: e1595504-9fee-4c5f-8629-24838eeb99ed
+
+	/// Arrow + YoY % chip (adjusted for the As-Of-Date close spike).
+	measure 'P1 YoY Chip' =
+			VAR v = [Won Revenue YoY % (Adj.)]
+			RETURN IF ( ISBLANK ( v ), "● n/a", IF ( v > 0, "▲ ", IF ( v < 0, "▼ ", "● " ) ) & FORMAT ( ABS ( v ), "0.0%" ) & " " & [Chip Basis] )
+		displayFolder: 07 Dashboard\P1 CRM Analytics\Labels
+		lineageTag: 816af967-b74a-490c-b300-9d3ee373e05a
+
+	/// Subtitle under the revenue card.
+	measure 'P1 Sub - Revenue' = "vs AED " & FORMAT ( [P1 Won Revenue PY] / 1000000, "#,0.0" ) & "M last year"
+		displayFolder: 07 Dashboard\P1 CRM Analytics\Labels
+		lineageTag: 9aa24a35-b7bb-44c3-bf2c-51c5ab325e0b
+
+	/// Subtitle under the attainment card.
+	measure 'P1 Sub - Attainment' =
+			VAR g = [P1 Gap to Target]
+			RETURN IF ( ISBLANK ( g ), "No target for this selection", IF ( g > 0, "AED " & FORMAT ( g / 1000000, "#,0.0" ) & "M short of target", "AED " & FORMAT ( -g / 1000000, "#,0.0" ) & "M above target" ) )
+		displayFolder: 07 Dashboard\P1 CRM Analytics\Labels
+		lineageTag: 1c183ee1-c1a4-4ac8-a874-3ddfda090031
+
+	/// Subtitle under the pipeline health card.
+	measure 'P1 Sub - Pipeline Health' = "AED " & FORMAT ( [P1 Pipeline at Risk] / 1000000, "#,0.0" ) & "M of AED " & FORMAT ( [P1 Open Pipeline] / 1000000, "#,0.0" ) & "M at risk"
+		displayFolder: 07 Dashboard\P1 CRM Analytics\Labels
+		lineageTag: d0ba87f4-a4ca-42a0-808d-943f94cccb89
+
+	/// Subtitle under the forecast card.
+	measure 'P1 Sub - Forecast' = "Realistic AED " & FORMAT ( [P1 Realistic Forecast] / 1000000, "#,0.0" ) & "M vs target AED " & FORMAT ( [P1 Revenue Target] / 1000000, "#,0.0" ) & "M"
+		displayFolder: 07 Dashboard\P1 CRM Analytics\Labels
+		lineageTag: 5e4886d8-6947-47f8-acb6-184ba21a8d18
+
+	/// One-line management verdict combining attainment, pipeline health and realistic forecast. Intended for the page banner.
+	measure 'P1 Verdict' =
+			VAR Att = [P1 Target Attainment %]
+			VAR Health = [P1 Pipeline Health %]
+			VAR Fc = [P1 Realistic Forecast vs Target %]
+			RETURN
+			SWITCH (
+			    TRUE (),
+			    ISBLANK ( Att ), "Select a period with targets to assess performance.",
+			    Att >= 1 && Health >= 0.6, "On track: target met and the pipeline is healthy. Protect momentum and shift focus to growth.",
+			    Att >= 1, "Target met, but pipeline quality is weak. Re-qualify aged deals to sustain next period.",
+			    Fc >= 1 && Health >= 0.35, "Behind target today, but the healthy pipeline can close the gap. Accelerate late-stage deals.",
+			    Fc >= 1, "Behind target. Forecast is only reachable if aged pipeline converts. Prioritise re-qualification.",
+			    Health >= 0.35, "Behind target and the realistic forecast falls short. Build new pipeline and speed up commit deals.",
+			    "Behind target and pipeline quality is weak. Urgent: re-qualify aged deals and rebuild coverage."
+			)
+		displayFolder: 07 Dashboard\P1 CRM Analytics\Labels
+		lineageTag: 1bba38eb-85ba-4eaa-8542-002bf8bd4fef
+
+	/// 1 when the period is on or before the As-Of Date. Use as a visual-level filter (is 1) on trend charts to hide future months that only have last-year data.
+	measure 'P1 Is Reported Period' = IF ( MIN ( 'Date'[Date] ) <= [As-Of Date], 1, 0 )
+		formatString: 0
+		displayFolder: 07 Dashboard\P1 CRM Analytics\Trend
+		lineageTag: 1bba13e6-34e5-4dbb-8b72-5f7d02f8b1f3
+
+	/// View-aware won revenue excluding deals closed on the As-Of Date (suspected extract-date artefact).
+	measure 'P1 Won Revenue (Adj.)' =
+			VAR AsOf = [As-Of Date]
+			VAR Spike =
+			    IF (
+			        [Prior Year Comparison Applies],
+			        COALESCE ( [Won Revenue Closed On As-Of Date], 0 ),
+			        COALESCE ( CALCULATE ( [Won Revenue], REMOVEFILTERS ( 'Date' ), 'Date'[Date] = AsOf ), 0 )
+			    )
+			RETURN [P1 Won Revenue] - Spike
+		formatString: """AED ""#,0.0,,""M"""
+		displayFolder: 07 Dashboard\P1 CRM Analytics\Scorecard
+		lineageTag: e89d2c49-9bd0-4a0d-992b-176008c88df6
+
+	/// Row-level growth vs last year (adjusted for the As-Of-Date spike). Use on industry / region / customer / product axes.
+	measure 'P1 YoY % (Row)' = DIVIDE ( [P1 Won Revenue (Adj.)] - [P1 Won Revenue PY], [P1 Won Revenue PY] )
+		formatString: +0.0%;-0.0%;0.0%
+		displayFolder: 07 Dashboard\P1 CRM Analytics\Growth
+		lineageTag: f6e52867-780f-4522-8a21-8d35ecdab39c
+
+	/// Conditional-format hex for row growth: soft green up, soft red down, grey n/a.
+	measure 'P1 Color - Row Growth' =
+			VAR v = [P1 YoY % (Row)]
+			RETURN SWITCH ( TRUE (), ISBLANK ( v ), "#9AA5B1", v > 0, "#4FA67A", v < 0, "#D9667A", "#9AA5B1" )
+		displayFolder: 07 Dashboard\P1 CRM Analytics\Colors
+		lineageTag: 8115690b-ea87-4c39-861e-a8c9d02b8f26
+
+	/// Arrow + % text for table/matrix cells. Growth above 500% is shown as >500% (small prior-year base).
+	measure 'P1 Row Arrow' =
+			VAR v = [P1 YoY % (Row)]
+			RETURN IF ( ISBLANK ( v ), "● n/a", IF ( v > 5, "▲ >500%", IF ( v > 0, "▲ " & FORMAT ( v, "0.0%" ), IF ( v < 0, "▼ " & FORMAT ( ABS ( v ), "0.0%" ), "● 0.0%" ) ) ) )
+		displayFolder: 07 Dashboard\P1 CRM Analytics\Growth
+		lineageTag: 3af9ab64-52e5-44b8-9047-ced0cc1a4f36
+
+	/// Share of won revenue within the current view/selection (replaces the all-time Revenue Share % for this page).
+	measure 'P1 Revenue Share %' = DIVIDE ( [P1 Won Revenue], CALCULATE ( [P1 Won Revenue], ALLSELECTED () ) )
+		formatString: 0.0%
+		displayFolder: 07 Dashboard\P1 CRM Analytics\Growth
+		lineageTag: c0192ff5-e24d-4326-bdb7-6703ad5a536b
+
+	/// View-aware insight 1 headline: performance vs target.
+	measure 'P1 Insight 1 - Headline' = IF ( ISBLANK ( [P1 Target Attainment %] ), "Won AED " & FORMAT ( [P1 Won Revenue] / 1000000, "#,0.0" ) & "M", "Won AED " & FORMAT ( [P1 Won Revenue] / 1000000, "#,0.0" ) & "M, " & FORMAT ( [P1 Target Attainment %], "0.0%" ) & " of target" )
+		displayFolder: 07 Dashboard\P1 CRM Analytics\Insights
+		lineageTag: 099ee219-393e-4411-981e-48b5d77bb3be
+
+	/// View-aware insight 1 detail.
+	measure 'P1 Insight 1 - Detail' = [P1 Sub - Attainment] & ". Growth vs last year (adjusted): " & FORMAT ( [Won Revenue YoY % (Adj.)], "+0.0%;-0.0%;0.0%" ) & "."
+		displayFolder: 07 Dashboard\P1 CRM Analytics\Insights
+		lineageTag: 4ae0a795-cf19-4b04-ad48-67340150a2a6
+
+	/// View-aware insight 2 headline: pipeline quality.
+	measure 'P1 Insight 2 - Headline' = FORMAT ( 1 - [P1 Pipeline Health %], "0.0%" ) & " of open pipeline is at risk"
+		displayFolder: 07 Dashboard\P1 CRM Analytics\Insights
+		lineageTag: 11ac761a-e8af-41a2-8f65-f14ef18496ea
+
+	/// View-aware insight 2 detail.
+	measure 'P1 Insight 2 - Detail' = "Only AED " & FORMAT ( [P1 Healthy Pipeline] / 1000000, "#,0.0" ) & "M of AED " & FORMAT ( [P1 Open Pipeline] / 1000000, "#,0.0" ) & "M is healthy. Realistic forecast reaches " & FORMAT ( [P1 Realistic Forecast vs Target %], "0.0%" ) & " of target."
+		displayFolder: 07 Dashboard\P1 CRM Analytics\Insights
+		lineageTag: fdd5734c-9f24-4740-a6eb-1c2ac327b930
+
+	/// View-aware insight 3 headline: fastest-growing industry.
+	measure 'P1 Insight 3 - Headline' =
+			VAR T = FILTER ( ADDCOLUMNS ( VALUES ( Accounts[Industry] ), "@g", [P1 YoY % (Row)] ), NOT ISBLANK ( [@g] ) )
+			VAR Best = TOPN ( 1, T, [@g], DESC )
+			RETURN MAXX ( Best, Accounts[Industry] ) & " is the fastest-growing industry (" & FORMAT ( MAXX ( Best, [@g] ), "+0.0%;-0.0%" ) & ")"
+		displayFolder: 07 Dashboard\P1 CRM Analytics\Insights
+		lineageTag: c227f857-57e2-4e0b-ade7-76769813f9d9
+
+	/// View-aware insight 3 detail: weakest industry and breadth of decline.
+	measure 'P1 Insight 3 - Detail' =
+			VAR T = FILTER ( ADDCOLUMNS ( VALUES ( Accounts[Industry] ), "@g", [P1 YoY % (Row)] ), NOT ISBLANK ( [@g] ) )
+			VAR Worst = TOPN ( 1, T, [@g], ASC )
+			RETURN MAXX ( Worst, Accounts[Industry] ) & " is declining fastest (" & FORMAT ( MAXX ( Worst, [@g] ), "+0.0%;-0.0%" ) & "); " & COUNTROWS ( FILTER ( T, [@g] < 0 ) ) & " of " & COUNTROWS ( T ) & " industries are below last year."
+		displayFolder: 07 Dashboard\P1 CRM Analytics\Insights
+		lineageTag: 9db3d246-21cd-4dd6-95e5-950ab761f334
+
+	/// Arrow + points chip for the win-rate card.
+	measure 'P1 Win Rate Chip' =
+			VAR v = [Win Rate Change (Display)]
+			RETURN IF ( ISBLANK ( v ), "● n/a", IF ( v > 0, "▲ ", IF ( v < 0, "▼ ", "● " ) ) & FORMAT ( ABS ( v ), "0.0" ) & " % " & [Chip Basis] )
+		displayFolder: 07 Dashboard\P1 CRM Analytics\Labels
+		lineageTag: 4e6e77c4-5777-4619-93eb-453e8f7ea387
+
+	/// Concentration risk label for the Top 10 customer card.
+	measure 'P1 Sub - Concentration' =
+			VAR v = [P1 Top 10 Customer Share %]
+			RETURN SWITCH ( TRUE (), ISBLANK ( v ), "n/a", v < 0.3, "Low concentration risk", v < 0.5, "Moderate concentration risk", "High concentration risk" )
+		displayFolder: 07 Dashboard\P1 CRM Analytics\Labels
+		lineageTag: f79d33f9-4ebf-4a57-b08d-2e453c550e63
+
+	/// Green when concentration is low, amber moderate, red high.
+	measure 'P1 Color - Concentration' =
+			VAR v = [P1 Top 10 Customer Share %]
+			RETURN SWITCH ( TRUE (), ISBLANK ( v ), "#9AA5B1", v < 0.3, "#4FA67A", v < 0.5, "#E0A03A", "#D9667A" )
+		displayFolder: 07 Dashboard\P1 CRM Analytics\Colors
+		lineageTag: 47ca065c-e728-47fb-a4fd-a8187b2ae3a3
+
+	/// Rank of the customer by won revenue in the current selection (1 = largest). Customers with no revenue get 9999 so a visual-level filter (<= 5) excludes them.
+	measure 'P1 Customer Rank' = IF ( ISBLANK ( [P1 Won Revenue] ), 9999, RANKX ( ALLSELECTED ( Accounts[AccountName] ), [P1 Won Revenue], , DESC, Skip ) )
+		formatString: 0
+		displayFolder: 07 Dashboard\P1 CRM Analytics\Growth
+		lineageTag: 4304fb3f-8aa4-4c0a-9595-e4ecfab906c3
+
+	/// Funnel bar: open stages = current pipeline snapshot; Closed Won = won revenue for the selected period / YTD.
+	measure 'P1 Funnel Value' = IF ( SELECTEDVALUE ( Opportunities[Stage] ) = "Closed Won", [P1 Won Revenue], CALCULATE ( [Funnel Value], REMOVEFILTERS ( 'Date' ) ) )
+		formatString: 0.00
+		displayFolder: 07 Dashboard\P1 CRM Analytics\Pipeline Health
+		lineageTag: e24e1909-bde0-41fd-bc5f-0681a4406c79
+
+	/// Text for each row of the Key Insights table (Insights[Topic]). Uses the view-aware P1 insight measures.
+	measure 'P1 Insight Text' =
+			SWITCH (
+			    SELECTEDVALUE ( Insights[Order] ),
+			    1, [P1 Insight 1 - Headline] & ". " & [P1 Insight 1 - Detail],
+			    2, [P1 Insight 2 - Headline] & ". " & [P1 Insight 2 - Detail],
+			    3, [P1 Insight 3 - Headline] & ". " & [P1 Insight 3 - Detail],
+			    4, [Close Date Spike Note]
+			)
+		displayFolder: 07 Dashboard\P1 CRM Analytics\Insights
+		lineageTag: 0e982d06-730e-4e5b-ba28-2f125450bcd9
+
+	column Placeholder
+		dataType: int64
+		isHidden
+		lineageTag: 9ad849d0-913e-47b3-8f78-508b1238b142
+		summarizeBy: none
+		sourceColumn: Placeholder
+
+	partition _Measures = m
+		mode: import
+		source =
+				let
+				    Source = #table(type table [Placeholder = Int64.Type], {{1}})
+				in
+				    Source
+

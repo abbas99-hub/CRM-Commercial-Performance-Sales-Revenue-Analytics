@@ -1,0 +1,103 @@
+/// DIMENSION | One row per account (500). Source of truth for Industry and Segment.
+table Accounts
+	lineageTag: 6072f43e-95f9-4110-9a8c-d5e15b0f91be
+
+	column AccountID
+		dataType: string
+		lineageTag: 47092f44-b02f-40f3-8843-610c6e7b8cd2
+		summarizeBy: none
+		sourceColumn: AccountID
+
+	column AccountName
+		dataType: string
+		lineageTag: 86848257-e03a-4e4f-950e-8cda7ae22077
+		summarizeBy: none
+		sourceColumn: AccountName
+
+	column Industry
+		dataType: string
+		lineageTag: 310da482-58b9-43d0-bcd8-7ef4969bd5b5
+		summarizeBy: none
+		sourceColumn: Industry
+
+	column Country
+		dataType: string
+		lineageTag: 4c2be842-0d5e-4d7f-a0cf-50c205fd51f1
+		summarizeBy: none
+		sourceColumn: Country
+
+	column City
+		dataType: string
+		lineageTag: 4de6afe6-ac68-4441-a58f-dab76abcd332
+		summarizeBy: none
+		sourceColumn: City
+
+	column Segment
+		dataType: string
+		lineageTag: 239df167-fb25-4c0c-8cfa-bc7d5924e894
+		summarizeBy: none
+		sourceColumn: Segment
+
+	column TerritoryID
+		dataType: string
+		lineageTag: 9e3bff9f-6253-4782-b455-142839f11a62
+		summarizeBy: none
+		sourceColumn: TerritoryID
+
+	column AnnualRevenue
+		dataType: int64
+		formatString: "AED "#,0
+		lineageTag: db96982e-3cb4-40ea-b303-fbbb2e53b4e6
+		summarizeBy: none
+		sourceColumn: AnnualRevenue
+
+	column Employees
+		dataType: int64
+		formatString: #,0
+		lineageTag: d7c9f6f1-8ab3-4538-8792-d0956155fd37
+		summarizeBy: none
+		sourceColumn: Employees
+
+	column AccountStatus
+		dataType: string
+		lineageTag: 05131b6c-eedf-41ec-90a1-9a182f2677f0
+		summarizeBy: none
+		sourceColumn: AccountStatus
+
+	column IsActiveAccount
+		dataType: boolean
+		lineageTag: 178901af-d432-42ca-9f71-9676ab6d2314
+		summarizeBy: none
+		sourceColumn: IsActiveAccount
+
+	/// Latest activity date logged against this account, using the activity's OWN AccountID (decision: activity's own account/rep, not the opportunity's). Independent of any slicer. Blank = no activity ever.
+	column 'Last Activity Date' = CALCULATE ( MAX ( Activities[ActivityDate] ) )
+		dataType: dateTime
+		formatString: dd mmm yyyy
+		displayFolder: Activity Recency
+		lineageTag: fc8ae3e0-17ee-4c84-b606-2a17cb0dbfc4
+		summarizeBy: none
+
+	hierarchy Geography
+		lineageTag: e00e213f-885c-4da5-922f-f7d548fa38bd
+
+		level Country
+			lineageTag: 236f7f0a-c61a-4ed3-b601-77ff49fabf97
+			column: Country
+
+		level City
+			lineageTag: bb760396-cf77-4a6d-a36d-b3078d316fd0
+			column: City
+
+	partition Accounts = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents(SourceFolder & "Accounts.csv"),[Delimiter=",", Columns=10, Encoding=1252, QuoteStyle=QuoteStyle.None]),
+				    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+				    Typed = Table.TransformColumnTypes(Promoted,{{"AccountID", type text}, {"AccountName", type text}, {"Industry", type text}, {"Country", type text}, {"City", type text}, {"Segment", type text}, {"TerritoryID", type text}, {"AnnualRevenue", Int64.Type}, {"Employees", Int64.Type}, {"AccountStatus", type text}}),
+				    Cleaned = fnCleanText(Typed, {"AccountID","AccountName","Industry","Country","City","Segment","TerritoryID","AccountStatus"}, {"AccountID","TerritoryID"}),
+				    IsActive = Table.AddColumn(Cleaned, "IsActiveAccount", each [AccountStatus] = "Active", type logical)
+				in
+				    IsActive
+

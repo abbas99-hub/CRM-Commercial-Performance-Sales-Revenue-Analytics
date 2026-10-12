@@ -1,0 +1,279 @@
+/// FACT | Grain: one row per CRM opportunity record (15,000 rows). Core revenue/pipeline table. RULE: revenue always uses EstimatedRevenue, never OpportunityProducts line revenue. 35 rows are ID collisions flagged IsDuplicateRecord. Join key to child facts is OpportunityKey (unique), not OpportunityID.
+table Opportunities
+	lineageTag: 92c82a51-ddcb-4c9a-a222-f9b6e28a06ef
+
+	column OpportunityID
+		dataType: string
+		lineageTag: aa1b28b8-7491-46bc-886d-6289fab6f1b7
+		summarizeBy: none
+		sourceColumn: OpportunityID
+
+	column AccountID
+		dataType: string
+		isHidden
+		lineageTag: 114c4a9b-4803-49c6-8824-afe5aa498adc
+		summarizeBy: none
+		sourceColumn: AccountID
+
+	column SalesRepID
+		dataType: string
+		isHidden
+		lineageTag: a8913c2b-fb16-4a19-91b7-120768e95fe6
+		summarizeBy: none
+		sourceColumn: SalesRepID
+
+	column CreatedDate
+		dataType: dateTime
+		formatString: dd mmm yyyy
+		lineageTag: b6b48a4c-ef61-40ac-b655-381d069cebd4
+		summarizeBy: none
+		sourceColumn: CreatedDate
+
+	column ExpectedCloseDate
+		dataType: dateTime
+		formatString: dd mmm yyyy
+		lineageTag: ba1bd110-c87b-47c6-8657-00535c70f6b8
+		summarizeBy: none
+		sourceColumn: ExpectedCloseDate
+
+	column ActualCloseDate
+		dataType: dateTime
+		formatString: dd mmm yyyy
+		lineageTag: 8aaf1459-cdd2-4c31-9a01-8b211946ad2a
+		summarizeBy: none
+		sourceColumn: ActualCloseDate
+
+	column Stage
+		dataType: string
+		lineageTag: 0a49bc01-1510-4ea5-8679-df712248a2bd
+		summarizeBy: none
+		sourceColumn: Stage
+		sortByColumn: StageOrder
+
+	column EstimatedRevenue
+		dataType: int64
+		formatString: "AED "#,0
+		lineageTag: deaf5772-7999-43a4-a053-5ac68e577120
+		summarizeBy: sum
+		sourceColumn: EstimatedRevenue
+
+	column ProbabilityPct
+		dataType: int64
+		formatString: 0"%"
+		displayFolder: Forecast
+		lineageTag: b2b5fce4-98ce-442e-af3a-77a0c4cdf3b9
+		summarizeBy: none
+		sourceColumn: ProbabilityPct
+
+	column LeadSource
+		dataType: string
+		lineageTag: 83a94bb6-ed09-4b24-8d11-f4302da0592f
+		summarizeBy: none
+		sourceColumn: LeadSource
+
+	/// Redundant: identical to Accounts[Industry] on every row. Use the Accounts dimension.
+	column Industry
+		dataType: string
+		isHidden
+		lineageTag: f0dc1805-6659-4876-8a66-4506e0eb0b8b
+		summarizeBy: none
+		sourceColumn: Industry
+
+	/// Redundant: identical to Accounts[Segment] on every row. Use the Accounts dimension.
+	column Segment
+		dataType: string
+		isHidden
+		lineageTag: 685849f3-5309-4841-beaf-0a6c3668d43b
+		summarizeBy: none
+		sourceColumn: Segment
+
+	column CampaignID
+		dataType: string
+		isHidden
+		lineageTag: cd66455e-ee88-4976-afb5-7514eb48f3ed
+		summarizeBy: none
+		sourceColumn: CampaignID
+
+	/// Source CRM value. Not reliable: contradicts Stage (e.g. Closed Won tagged Pipeline). Prefer ForecastCategoryDerived.
+	column ForecastCategory
+		dataType: string
+		displayFolder: Forecast
+		lineageTag: bba6fa41-d6f0-452d-8fa1-5e226cb9ea80
+		summarizeBy: none
+		sourceColumn: ForecastCategory
+
+	column CompetitorInvolved
+		dataType: boolean
+		lineageTag: 1cb7b88a-2ee6-49e5-8b4f-c97ec9354e3c
+		summarizeBy: none
+		sourceColumn: CompetitorInvolved
+
+	column SourceRow
+		dataType: int64
+		isHidden
+		lineageTag: 82a1253e-28b6-4c15-8efa-a587291a7bb8
+		summarizeBy: none
+		sourceColumn: SourceRow
+
+	column OppIDCount
+		dataType: int64
+		isHidden
+		lineageTag: 76040558-e17d-4689-8df9-e986238021ea
+		summarizeBy: none
+		sourceColumn: OppIDCount
+
+	column IsDuplicateID
+		dataType: boolean
+		displayFolder: Data Quality Flags
+		lineageTag: 8ca0dc10-2a13-4bfe-922c-fe34c058f69c
+		summarizeBy: none
+		sourceColumn: IsDuplicateID
+
+	column IsDuplicateRecord
+		dataType: boolean
+		displayFolder: Data Quality Flags
+		lineageTag: f8ce719f-973f-4cd6-83c5-ec21eed3cc9c
+		summarizeBy: none
+		sourceColumn: IsDuplicateRecord
+
+	column OpportunityKey
+		dataType: string
+		isHidden
+		lineageTag: 4a98ebf4-ee09-494d-a69d-2b801eaba460
+		summarizeBy: none
+		sourceColumn: OpportunityKey
+
+	column MissingOwner
+		dataType: boolean
+		displayFolder: Data Quality Flags
+		lineageTag: d1ec5888-1e7b-4687-82b3-1881c9d292a7
+		summarizeBy: none
+		sourceColumn: MissingOwner
+
+	column MissingCloseDate
+		dataType: boolean
+		displayFolder: Data Quality Flags
+		lineageTag: b2206125-0b55-493e-864c-dbc5f548e961
+		summarizeBy: none
+		sourceColumn: MissingCloseDate
+
+	column ZeroValue
+		dataType: boolean
+		displayFolder: Data Quality Flags
+		lineageTag: 77e7951e-3bc2-4f52-a047-8a9e76c5d5ba
+		summarizeBy: none
+		sourceColumn: ZeroValue
+
+	column UnknownStage
+		dataType: boolean
+		displayFolder: Data Quality Flags
+		lineageTag: 07179b16-101f-41c1-8b9f-7fcb6b35003c
+		summarizeBy: none
+		sourceColumn: UnknownStage
+
+	column IsWon
+		dataType: boolean
+		displayFolder: Stage Status
+		lineageTag: 270dd979-4b38-4fc2-8345-4899c0352090
+		summarizeBy: none
+		sourceColumn: IsWon
+
+	column IsLost
+		dataType: boolean
+		displayFolder: Stage Status
+		lineageTag: 975453f6-39bc-4aa8-8e23-61fc8c05d2ff
+		summarizeBy: none
+		sourceColumn: IsLost
+
+	column IsOpen
+		dataType: boolean
+		displayFolder: Stage Status
+		lineageTag: da0328d6-19f4-4f24-b279-7842e9112d7d
+		summarizeBy: none
+		sourceColumn: IsOpen
+
+	column StageOrder
+		dataType: int64
+		isHidden
+		lineageTag: 8e79c84d-d60e-43a8-b272-f5074a3514a8
+		summarizeBy: none
+		sourceColumn: StageOrder
+
+	/// Derived from Stage: Negotiation=Commit, Proposal=Best Case, Qualification/Needs Analysis=Pipeline.
+	column ForecastCategoryDerived
+		dataType: string
+		displayFolder: Forecast
+		lineageTag: 481405bd-0138-4f5e-847d-a5e7de394a2d
+		summarizeBy: none
+		sourceColumn: ForecastCategoryDerived
+
+	column WeightedRevenue
+		dataType: double
+		formatString: "AED "#,0
+		displayFolder: Forecast
+		lineageTag: 053bc8c4-adb6-4932-a240-1b73ddb04eb6
+		summarizeBy: sum
+		sourceColumn: WeightedRevenue
+
+	column SalesCycleDays
+		dataType: int64
+		formatString: 0
+		lineageTag: b57664f2-c506-4f17-9bcd-1aa47ee7c417
+		summarizeBy: none
+		sourceColumn: SalesCycleDays
+
+	column ReportingCloseDate
+		dataType: dateTime
+		isHidden
+		formatString: dd mmm yyyy
+		lineageTag: 33ed6299-d0e5-4fca-b387-dad84a227e42
+		summarizeBy: none
+		sourceColumn: ReportingCloseDate
+
+	/// Ageing of open deals vs the As-Of Date (30 Sep 2026): Not yet due, 1-30, 31-90, 91-180, 181-365, >365 days overdue, No close date, or Not open. Fixed at refresh time.
+	column 'Overdue Age Bucket' = VAR AsOf = MAXX ( { CALCULATE ( MAX ( Opportunities[CreatedDate] ), ALL ( Opportunities ) ), CALCULATE ( MAX ( Activities[ActivityDate] ), ALL ( Activities ) ) }, [Value] ) VAR D = Opportunities[ExpectedCloseDate] RETURN SWITCH ( TRUE (), NOT Opportunities[IsOpen], "Not open", ISBLANK ( D ), "No close date", D >= AsOf, "Not yet due", AsOf - D <= 30, "1-30 days overdue", AsOf - D <= 90, "31-90 days overdue", AsOf - D <= 180, "91-180 days overdue", AsOf - D <= 365, "181-365 days overdue", ">365 days overdue" )
+		dataType: string
+		displayFolder: Forecast
+		lineageTag: 51f33c75-b9b8-4941-b6db-a4dff37d76df
+		summarizeBy: none
+		sortByColumn: 'Overdue Age Bucket Order'
+
+	column 'Overdue Age Bucket Order' = VAR AsOf = MAXX ( { CALCULATE ( MAX ( Opportunities[CreatedDate] ), ALL ( Opportunities ) ), CALCULATE ( MAX ( Activities[ActivityDate] ), ALL ( Activities ) ) }, [Value] ) VAR D = Opportunities[ExpectedCloseDate] RETURN SWITCH ( TRUE (), NOT Opportunities[IsOpen], 9, ISBLANK ( D ), 8, D >= AsOf, 1, AsOf - D <= 30, 2, AsOf - D <= 90, 3, AsOf - D <= 180, 4, AsOf - D <= 365, 5, 6 )
+		dataType: int64
+		isHidden
+		displayFolder: Forecast
+		lineageTag: 7cc4afcd-2f09-4c8a-8cdf-c3641cad6214
+		summarizeBy: none
+
+	partition Opportunities = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents(SourceFolder & "Opportunities.csv"),[Delimiter=",", Columns=15, Encoding=1252, QuoteStyle=QuoteStyle.None]),
+				    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+				    Typed = Table.TransformColumnTypes(Promoted,{{"OpportunityID", type text}, {"AccountID", type text}, {"SalesRepID", type text}, {"CreatedDate", type date}, {"ExpectedCloseDate", type date}, {"ActualCloseDate", type date}, {"Stage", type text}, {"EstimatedRevenue", Int64.Type}, {"ProbabilityPct", Int64.Type}, {"LeadSource", type text}, {"Industry", type text}, {"Segment", type text}, {"CampaignID", type text}, {"ForecastCategory", type text}, {"CompetitorInvolved", type logical}}),
+				    Cleaned = fnCleanText(Typed, {"OpportunityID","AccountID","SalesRepID","Stage","LeadSource","Industry","Segment","CampaignID","ForecastCategory"}, {"OpportunityID","AccountID","SalesRepID","CampaignID"}),
+				    StageStd = Table.TransformColumns(Cleaned, {{"Stage", each if _ = null then "Unknown" else Text.Proper(_), type text}}),
+				    Indexed = Table.AddIndexColumn(StageStd, "SourceRow", 1, 1, Int64.Type),
+				    IdStats = Table.Group(Indexed, {"OpportunityID"}, {{"OppIDCount", each Table.RowCount(_), Int64.Type}, {"FirstSourceRow", each List.Min([SourceRow]), Int64.Type}}),
+				    Joined = Table.NestedJoin(Indexed, {"OpportunityID"}, IdStats, {"OpportunityID"}, "IdStats", JoinKind.LeftOuter),
+				    Expanded = Table.ExpandTableColumn(Joined, "IdStats", {"OppIDCount", "FirstSourceRow"}),
+				    FlagDupID = Table.AddColumn(Expanded, "IsDuplicateID", each [OppIDCount] > 1, type logical),
+				    FlagDupRec = Table.AddColumn(FlagDupID, "IsDuplicateRecord", each [SourceRow] > [FirstSourceRow], type logical),
+				    OppKey = Table.AddColumn(FlagDupRec, "OpportunityKey", each if [IsDuplicateRecord] then [OpportunityID] & "-DUP" else [OpportunityID], type text),
+				    FlagOwner = Table.AddColumn(OppKey, "MissingOwner", each [SalesRepID] = null, type logical),
+				    FlagClose = Table.AddColumn(FlagOwner, "MissingCloseDate", each [ExpectedCloseDate] = null, type logical),
+				    FlagZero = Table.AddColumn(FlagClose, "ZeroValue", each [EstimatedRevenue] = null or [EstimatedRevenue] = 0, type logical),
+				    FlagUnknown = Table.AddColumn(FlagZero, "UnknownStage", each [Stage] = "Unknown", type logical),
+				    IsWon = Table.AddColumn(FlagUnknown, "IsWon", each [Stage] = "Closed Won", type logical),
+				    IsLost = Table.AddColumn(IsWon, "IsLost", each [Stage] = "Closed Lost", type logical),
+				    IsOpen = Table.AddColumn(IsLost, "IsOpen", each List.Contains({"Qualification","Needs Analysis","Proposal","Negotiation"}, [Stage]), type logical),
+				    StageOrder = Table.AddColumn(IsOpen, "StageOrder", each List.PositionOf({"Qualification","Needs Analysis","Proposal","Negotiation","Closed Won","Closed Lost"}, [Stage]) + 1, Int64.Type),
+				    FcDerived = Table.AddColumn(StageOrder, "ForecastCategoryDerived", each if [Stage] = "Closed Won" then "Closed Won" else if [Stage] = "Closed Lost" then "Closed Lost" else if [Stage] = "Negotiation" then "Commit" else if [Stage] = "Proposal" then "Best Case" else if [Stage] = "Qualification" or [Stage] = "Needs Analysis" then "Pipeline" else "Unclassified", type text),
+				    Weighted = Table.AddColumn(FcDerived, "WeightedRevenue", each if [IsWon] then Number.From([EstimatedRevenue] ?? 0) else if [IsOpen] then Number.From([EstimatedRevenue] ?? 0) * Number.From([ProbabilityPct] ?? 0) / 100 else 0, type number),
+				    Cycle = Table.AddColumn(Weighted, "SalesCycleDays", each if [ActualCloseDate] <> null and [CreatedDate] <> null then Duration.Days([ActualCloseDate] - [CreatedDate]) else null, Int64.Type),
+				    CloseDt = Table.AddColumn(Cycle, "ReportingCloseDate", each if [ActualCloseDate] <> null then [ActualCloseDate] else [ExpectedCloseDate], type date),
+				    Final = Table.RemoveColumns(CloseDt, {"FirstSourceRow"})
+				in
+				    Final
+

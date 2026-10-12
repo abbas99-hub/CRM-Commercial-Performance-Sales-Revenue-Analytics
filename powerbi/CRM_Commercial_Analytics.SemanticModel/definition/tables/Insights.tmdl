@@ -1,0 +1,31 @@
+/// PARAMETER | Disconnected 4-row list driving the Key Insights table on the CRM Analytics page. Not related to any table by design.
+table Insights
+	lineageTag: 1026e7c3-2054-403b-86cc-4e7851723c91
+
+	column Topic
+		lineageTag: a6f9d2a7-b2f2-4ecc-be9a-e62ec045937e
+		isNameInferred
+		sourceColumn: [Topic]
+		sortByColumn: Order
+
+	column Order
+		isHidden
+		lineageTag: bd201e2a-ed1b-4590-b395-d1cf17157f61
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Order]
+
+	partition Insights = calculated
+		mode: import
+		source =
+				DATATABLE (
+				    "Topic", STRING,
+				    "Order", INTEGER,
+				    {
+				        { "Performance", 1 },
+				        { "Pipeline", 2 },
+				        { "Industry", 3 },
+				        { "Data quality", 4 }
+				    }
+				)
+

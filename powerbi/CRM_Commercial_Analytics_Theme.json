@@ -1,0 +1,16 @@
+{
+  "name": "CRM Commercial Analytics",
+  "dataColors": [
+    "#2F5597",
+    "#70AD47",
+    "#ED7D31",
+    "#A5A5A5",
+    "#FFC000",
+    "#5B9BD5",
+    "#4472C4",
+    "#C55A11"
+  ],
+  "background": "#FFFFFF",
+  "foreground": "#1F2937",
+  "tableAccent": "#2F5597"
+}

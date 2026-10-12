@@ -1,0 +1,98 @@
+-- CORE COMMERCIAL KPIs
+Total Pipeline = 
+CALCULATE(SUM(Opportunities[EstimatedRevenue]),
+    Opportunities[Stage] <> "Closed Won",
+    Opportunities[Stage] <> "Closed Lost")
+
+Won Revenue =
+CALCULATE(SUM(Opportunities[EstimatedRevenue]),
+    Opportunities[Stage] = "Closed Won")
+
+Lost Revenue =
+CALCULATE(SUM(Opportunities[EstimatedRevenue]),
+    Opportunities[Stage] = "Closed Lost")
+
+Won Opportunities =
+CALCULATE(DISTINCTCOUNT(Opportunities[OpportunityID]),
+    Opportunities[Stage] = "Closed Won")
+
+Closed Opportunities =
+CALCULATE(DISTINCTCOUNT(Opportunities[OpportunityID]),
+    Opportunities[Stage] IN {"Closed Won","Closed Lost"})
+
+Win Rate % =
+DIVIDE([Won Opportunities], [Closed Opportunities])
+
+Average Deal Size =
+DIVIDE([Won Revenue], [Won Opportunities])
+
+Weighted Pipeline =
+SUMX(
+    FILTER(Opportunities, Opportunities[Stage] <> "Closed Lost"),
+    Opportunities[EstimatedRevenue] * Opportunities[ProbabilityPct] / 100
+)
+
+Pipeline Coverage =
+DIVIDE([Total Pipeline], SUM(Targets[RevenueTarget]))
+
+Open Opportunities =
+CALCULATE(DISTINCTCOUNT(Opportunities[OpportunityID]),
+    Opportunities[Stage] <> "Closed Won",
+    Opportunities[Stage] <> "Closed Lost")
+
+Average Opportunity Age (Days) =
+AVERAGEX(
+    FILTER(Opportunities,
+        Opportunities[Stage] <> "Closed Won" &&
+        Opportunities[Stage] <> "Closed Lost"),
+    DATEDIFF(Opportunities[CreatedDate], TODAY(), DAY)
+)
+
+Activities =
+DISTINCTCOUNT(Activities[ActivityID])
+
+Activities per Opportunity =
+DIVIDE([Activities], [Open Opportunities])
+
+Revenue Target =
+SUM(Targets[RevenueTarget])
+
+Target Achievement % =
+DIVIDE([Won Revenue], [Revenue Target])
+
+-- DATA QUALITY
+Duplicate Opportunity IDs =
+COUNTROWS(Opportunities) - DISTINCTCOUNT(Opportunities[OpportunityID])
+
+Missing Sales Rep =
+CALCULATE(COUNTROWS(Opportunities), ISBLANK(Opportunities[SalesRepID]))
+
+Missing Close Date =
+CALCULATE(COUNTROWS(Opportunities), ISBLANK(Opportunities[ExpectedCloseDate]))
+
+Zero Revenue Opportunities =
+CALCULATE(COUNTROWS(Opportunities), Opportunities[EstimatedRevenue] <= 0)
+
+Data Quality Issue Count =
+[Duplicate Opportunity IDs] + [Missing Sales Rep] +
+[Missing Close Date] + [Zero Revenue Opportunities]
+
+Data Completeness % =
+1 - DIVIDE([Data Quality Issue Count], COUNTROWS(Opportunities))
+
+-- COMMERCIAL DIAGNOSTICS
+Stage Conversion =
+DIVIDE(
+    CALCULATE(DISTINCTCOUNT(Opportunities[OpportunityID]), Opportunities[Stage]="Closed Won"),
+    CALCULATE(DISTINCTCOUNT(Opportunities[OpportunityID]),
+        Opportunities[Stage] IN {"Proposal","Negotiation","Closed Won","Closed Lost"})
+)
+
+High Value Pipeline =
+CALCULATE([Total Pipeline], Opportunities[EstimatedRevenue] >= 100000)
+
+At Risk Pipeline =
+CALCULATE([Total Pipeline],
+    Opportunities[ProbabilityPct] <= 25,
+    Opportunities[Stage] <> "Closed Won",
+    Opportunities[Stage] <> "Closed Lost")

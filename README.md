@@ -5,6 +5,8 @@
 ![Power BI](https://img.shields.io/badge/Power%20BI-Commercial%20Analytics-yellow)
 ![Dynamics 365](https://img.shields.io/badge/Dynamics%20365-CRM-blue)
 
+<img width="678" height="452" alt="CRM_analytics_2" src="https://github.com/user-attachments/assets/c4e02954-0941-408f-b9f7-497007cce744" />
+
 ## 1. Executive summary
 
 This project demonstrates how a commercial analyst can turn Dynamics 365-style CRM data into a management decision system in Power BI.

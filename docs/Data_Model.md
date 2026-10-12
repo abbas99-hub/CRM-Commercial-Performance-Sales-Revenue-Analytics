@@ -33,4 +33,4 @@ Campaigns 1 ─── * Opportunities
 
 ## Modeling note
 
-The synthetic data contains duplicate Opportunity IDs intentionally. Do not hide this by forcing an invalid one-to-many relationship. Use a data-quality diagnostic and, for a production system, resolve the source-data issue before relying on opportunity-level uniqueness.
+The CRM data contains duplicate Opportunity IDs. Do not hide this by forcing an invalid one-to-many relationship. Use a data-quality diagnostic and, for a production system, resolve the source-data issue before relying on opportunity-level uniqueness.

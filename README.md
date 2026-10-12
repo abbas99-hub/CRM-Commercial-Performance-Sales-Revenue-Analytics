@@ -5,7 +5,8 @@
 ![Power BI](https://img.shields.io/badge/Power%20BI-Commercial%20Analytics-yellow)
 ![Dynamics 365](https://img.shields.io/badge/Dynamics%20365-CRM-blue)
 
-<img width="678" height="452" alt="CRM_analytics_2" src="https://github.com/user-attachments/assets/c4e02954-0941-408f-b9f7-497007cce744" />
+<img width="1537" height="1023" alt="CRM and Data Analytics Infographic" src="https://github.com/user-attachments/assets/7ea4803a-8943-4bdc-b0d0-ab815cc58d8b" />
+
 
 ## 1. Executive summary
 

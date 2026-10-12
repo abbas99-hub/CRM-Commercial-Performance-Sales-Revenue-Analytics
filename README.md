@@ -185,39 +185,6 @@ Microsoft also documents Power BI visualization embedding within model-driven Po
 - Create a repeatable CRM data-quality control layer.
 - Move sales reviews from record collection to exception-based management.
 
-## 14. Repository structure
-
-```text
-Dynamics365-CRM-Commercial-Analytics/
-├── .github/
-│   └── workflows/
-├── articles/
-│   └── medium-crm-analytics.md
-├── dashboard/
-│   └── Dashboard_Specification.md
-├── data/
-│   └── raw/
-├── docs/
-│   ├── Business_Case.md
-│   ├── Architecture.md
-│   ├── Data_Model.md
-│   ├── KPI_Dictionary.md
-│   └── Implementation_Guide.md
-├── powerbi/
-│   ├── DAX_Measures.dax
-│   ├── Semantic_Model.md
-│   └── CRM_Commercial_Analytics_Theme.json
-├── src/
-│   └── README.md
-├── scripts/
-│   └── README.md
-├── .gitignore
-├── LICENSE
-└── README.md
-```
-
-
-
 **Dynamics 365 CRM Commercial Analytics | Power BI | Sales Pipeline & Forecast Intelligence**
 
 Skills demonstrated:
